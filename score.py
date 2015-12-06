@@ -265,8 +265,8 @@ def read_config(config_file):
 
 def main(config):
     books_file = config['books_file']
-    contest_start = datetime.strptime(config['contest']['start_date'], "%Y-%m-%d")
-    contest_end = datetime.strptime(config['contest']['end_date'], "%Y-%m-%d")
+    contest_start = datetime.strptime(config['contest']['start_date'], "%Y-%m-%d %H:%M:%S")
+    contest_end = datetime.strptime(config['contest']['end_date'], "%Y-%m-%d %H:%M:%S")
     lang = config['contest']['language']
     cache_file = config['cache_file']
 
