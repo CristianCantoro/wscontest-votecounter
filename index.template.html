@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <meta charset="utf-8">
+  <title>Dodicesimo compleanno di Wikisource</title>
+  <script type="text/javascript" src="//tools-static.wmflabs.org/cdnjs/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="//tools-static.wmflabs.org/cdnjs/ajax/libs/twitter-bootstrap/3.3.5/css/bootstrap.min.css">
+  <script type="text/javascript" src="//tools-static.wmflabs.org/cdnjs/ajax/libs/twitter-bootstrap/3.3.5/js/bootstrap.min.js"></script>
+  <script type="text/javascript" src="//tools-static.wmflabs.org/cdnjs/ajax/libs/jquery.tablesorter/2.24.6/js/jquery.tablesorter.min.js"></script>
+  <script type="text/javascript" src="//tools-static.wmflabs.org/cdnjs/ajax/libs/jquery.tablesorter/2.24.6/js/jquery.tablesorter.widgets.min.js"></script>
+  <script type="text/javascript">
+      $( function () {
+          $( '#score' ).tablesorter( {
+              headerTemplate: '{content} {icon}',
+              sortList: [ [ 1, 1 ] ],
+              theme: 'bootstrap',
+              widgets: [ 'uitheme' ]
+              } );
+          } );
+  </script>
+</head>
+<body>
+  <div class="container">
+    <h1>Dodicesimo compleanno di Wikisource</h1>
+    <table id="score" class="table table-striped">
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Punti</th>
+          <th>Vali</th>
+          <th>Revi</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{{rows}}}
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>
