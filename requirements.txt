@@ -1,2 +1,0 @@
-pywikibot==2.0rc1.post2
-requests==2.8.1
