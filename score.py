@@ -149,7 +149,7 @@ def get_score(books_file, contest_start, contest_end, lang, cache_file):
             vali = cache[book]['vali']
             revi = cache[book]['revi']
         else:
-            logger.info("Processing book... \"{}\"".format(book))
+            logger.info("Querying the API...")
             for pag in range(1, end + 1):
                 query = get_page_revisions(book, pag, lang)
                 try:
