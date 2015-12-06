@@ -90,6 +90,13 @@ Here's a example of cached results for a book:
   }
 }
 ```
+
+### Output
+Results are written in TSV format in `results.tsv`. Activating the `--html` flag you can
+also produce an HTML version of the output `index.html`.
+The HTML output uses a template `index.template.html` that expects to find a `{{{rows}}}`
+token to indicate where results will be written.
+
 ## Installation
 
 This script uses Python 3, it has been tested with Python 3.4.3.
