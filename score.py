@@ -201,30 +201,38 @@ def get_score(books_file, contest_start, contest_end, lang, cache_file):
                 timestamp = datetime.strptime(rev['timestamp'], '%Y-%m-%dT%H:%M:%SZ')
                 user = rev['user']
                 txt = rev['*']
-                a, b = re.findall('<pagequality level="(\d)" user="(.*?)" />', txt)[0]
-                a = int(a)
-                b = user
-                if a == 3 and (old is None or old < 3) and timestamp >= contest_start and timestamp < contest_end:
+                quality_level, newUser = re.findall('<pagequality level="(\d)" user="(.*?)" />', txt)[0]
+                quality_level = int(quality_level)
+                newUser = user
+
+                # if old is None: Page doesn't exist before
+                if quality_level == 3 and (old is None or old < 3) and timestamp >= contest_start and timestamp < contest_end:
+                    logger.debug("User: {} - Case 1 - Proofread the page".format(newUser))
                     # User b proofreads the page pag
-                    # if old is None:
-                    #     print("Page doesn't exist before.")
-                    punts[b] += 2
-                    revi[b] += 1
-                if a == 3 and old == 4 and timestamp >= contest_start and timestamp < contest_end:
-                    if oldTimestamp >= midterm1 and oldTimestamp < DATE2:
+                    punts[newUser] += 3
+                    revi[newUser] += 1
+
+                if quality_level == 4 and old == 3 and timestamp >= contest_start and timestamp < contest_end:
+                    logger.debug("User: {} - Case 2 - Validation".format(newUser))
+                    # User b validates page pag
+                    punts[newUser] += 1
+                    vali[newUser] += 1
+
+                if quality_level == 3 and old == 4 and timestamp >= contest_start:
+                    if oldTimestamp >= contest_start and oldTimestamp <= contest_end:
+                        logger.debug("User: {} - Case 3 - Reverted validation".format(newUser))
                         punts[oldUser] -= 1
                         vali[oldUser] -= 1
-                if a == 4 and old == 3 and timestamp >= contest_start and timestamp < contest_end:
-                    # User b validates page pag
-                    punts[b] += 1
-                    vali[b] += 1
-                if a < 3 and old == 3 and timestamp >= contest_start and timestamp < contest_end:
-                    if oldTimestamp >= contest_start and oldTimestamp < contest_end:
-                        punts[oldUser] -= 2
-                        revi[oldUser] = vali[oldUser] - 1  # sic?!?
-            old = a
-            oldUser = b
-            oldTimestamp = timestamp
+
+                if quality_level < 3 and old == 3 and timestamp >= contest_start:
+                    if oldTimestamp >= contest_start and oldTimestamp <= contest_end:
+                        logger.debug("User: {} - Case 4 - Reverted proofread".format(newUser))
+                        punts[oldUser] -= 3
+                        revi[oldUser] -= 1
+
+                old = quality_level
+                oldUser = newUser
+                oldTimestamp = timestamp
 
             logger.debug(punts)
             logger.debug(vali)
