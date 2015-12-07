@@ -94,22 +94,6 @@ def get_books(books_file):
         yield spl[0], int(spl[1])
 
 
-def get_page_revisions(book, page, lang):
-    params = {
-        'action': 'query',
-        'format': 'json',
-        'prop': 'revisions',
-        'titles': 'Page:{book}/{page}'.format(book=book, page=page),
-        'rvlimit': '50',
-        'rvprop': 'user|timestamp|content'
-    }
-    params = urllib.parse.urlencode(params).encode('ascii')
-    logger.info("\tRequest page 'Page:{}/{}'".format(book, page))
-    with urllib.request.urlopen(WIKISOURCE_API.format(lang=lang),
-                                params) as f:
-        return json.loads(f.read().decode('utf-8'))
-
-
 def read_cache(cache_file):
     logger.debug("Reading cache")
     try:
@@ -127,6 +111,37 @@ def write_cache(cache):
         json.dump(cache, f)
 
 
+def get_page_revisions(book, page, lang, cache_file):
+
+    cache = read_cache(cache_file)
+    page = str(page)
+    # Request is cached
+    if book in cache and page in cache[book]:
+        logger.info("Request is cached...")
+        return cache[book][page]
+
+    # Request is NOT cached
+    if book not in cache:
+        cache[book] = dict()
+
+    params = {
+        'action': 'query',
+        'format': 'json',
+        'prop': 'revisions',
+        'titles': 'Page:{book}/{page}'.format(book=book, page=page),
+        'rvlimit': '50',
+        'rvprop': 'user|timestamp|content'
+    }
+    params = urllib.parse.urlencode(params).encode('ascii')
+    logger.info("\tRequest page 'Page:{}/{}'".format(book, page))
+    with urllib.request.urlopen(WIKISOURCE_API.format(lang=lang),
+                                params) as f:
+
+        cache[book][page] = json.loads(f.read().decode('utf-8'))
+        write_cache(cache)
+        return cache[book][page]
+
+
 def get_score(books_file, contest_start, contest_end, lang, cache_file):
     # defaults are 0
     books = get_books(books_file)
@@ -141,62 +156,48 @@ def get_score(books_file, contest_start, contest_end, lang, cache_file):
         vali = defaultdict(int)
         revi = defaultdict(int)
 
-        cache = read_cache(cache_file)
-
-        if book in cache:
-            logger.info("Book \"{}\" is cached... (continue)".format(book))
-            punts = cache[book]['punts']
-            vali = cache[book]['vali']
-            revi = cache[book]['revi']
-        else:
-            logger.info("Querying the API...")
-            for pag in range(1, end + 1):
-                query = get_page_revisions(book, pag, lang)
-                try:
-                    revs = list(query['query']['pages'].values())[0]['revisions'][::-1]
-                except KeyError:
-                    continue
-                old = None
-                oldUser = None
-                oldTimestamp = None
-                for rev in revs:
-                    timestamp = datetime.strptime(rev['timestamp'], '%Y-%m-%dT%H:%M:%SZ')
-                    user = rev['user']
-                    txt = rev['*']
-                    a, b = re.findall('<pagequality level="(\d)" user="(.*?)" />', txt)[0]
-                    a = int(a)
-                    b = user
-                    if a == 3 and (old is None or old < 3) and timestamp >= contest_start and timestamp < contest_end:
-                        # User b proofreads the page pag
-                        # if old is None:
-                        #     print("Page doesn't exist before.")
-                        punts[b] += 2
-                        revi[b] += 1
-                    if a == 3 and old == 4 and timestamp >= contest_start and timestamp < contest_end:
-                        if oldTimestamp >= midterm1 and oldTimestamp < DATE2:
-                            punts[oldUser] -= 1
-                            vali[oldUser] -= 1
-                    if a == 4 and old == 3 and timestamp >= contest_start and timestamp < contest_end:
-                        # User b validates page pag
-                        punts[b] += 1
-                        vali[b] += 1
-                    if a < 3 and old == 3 and timestamp >= contest_start and timestamp < contest_end:
-                        if oldTimestamp >= contest_start and oldTimestamp < contest_end:
-                            punts[oldUser] -= 2
-                            revi[oldUser] = vali[oldUser] - 1  # sic?!?
-                old = a
-                oldUser = b
-                oldTimestamp = timestamp
+        logger.info("Querying the API...")
+        for pag in range(1, end + 1):
+            query = get_page_revisions(book, pag, lang, cache_file)
+            try:
+                revs = list(query['query']['pages'].values())[0]['revisions'][::-1]
+            except KeyError:
+                continue
+            old = None
+            oldUser = None
+            oldTimestamp = None
+            for rev in revs:
+                timestamp = datetime.strptime(rev['timestamp'], '%Y-%m-%dT%H:%M:%SZ')
+                user = rev['user']
+                txt = rev['*']
+                a, b = re.findall('<pagequality level="(\d)" user="(.*?)" />', txt)[0]
+                a = int(a)
+                b = user
+                if a == 3 and (old is None or old < 3) and timestamp >= contest_start and timestamp < contest_end:
+                    # User b proofreads the page pag
+                    # if old is None:
+                    #     print("Page doesn't exist before.")
+                    punts[b] += 2
+                    revi[b] += 1
+                if a == 3 and old == 4 and timestamp >= contest_start and timestamp < contest_end:
+                    if oldTimestamp >= midterm1 and oldTimestamp < DATE2:
+                        punts[oldUser] -= 1
+                        vali[oldUser] -= 1
+                if a == 4 and old == 3 and timestamp >= contest_start and timestamp < contest_end:
+                    # User b validates page pag
+                    punts[b] += 1
+                    vali[b] += 1
+                if a < 3 and old == 3 and timestamp >= contest_start and timestamp < contest_end:
+                    if oldTimestamp >= contest_start and oldTimestamp < contest_end:
+                        punts[oldUser] -= 2
+                        revi[oldUser] = vali[oldUser] - 1  # sic?!?
+            old = a
+            oldUser = b
+            oldTimestamp = timestamp
 
         tot_punts = reduce(add, (Counter(punts), Counter(tot_punts)))
         tot_vali = reduce(add, (Counter(vali), Counter(tot_vali)))
         tot_revi = reduce(add, (Counter(revi), Counter(tot_revi)))
-
-        cache[book] = dict()
-        cache[book]['punts'] = punts
-        cache[book]['vali'] = vali
-        cache[book]['revi'] = revi
-        write_cache(cache)
 
         logger.debug(tot_punts)
         logger.debug(tot_vali)
@@ -246,9 +247,6 @@ def write_csv(rows):
                                 delimiter='\t',
                                 quoting=csv.QUOTE_MINIMAL)
         writer.writeheader()
-
-        import pdb
-        pdb.set_trace()
 
         for row in rows:
             writer.writerow(dict(zip(csv_fields, row)))
