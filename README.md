@@ -26,19 +26,17 @@ The script expect to read two files:
 * `contest.conf.ini`
 
 #### books.tsv
-`books.tsv` a tab-separated list of books. Here's a sample:
-
+`books.tsv` a list of books. The number of pages is requested to the API and the response is cached.
+Here's a sample:
 ```
 # List of books participating in the Wikisource anniversary contest of 2015.
 #
 # FORMAT
-# book_name		num_pages
+# book_name
 #
-# Fields are separated tabs (\t). You can use as many tabs as you like.
-# 
 # Empty lines or lines starting with "#" are ignored.
 
-"Bandello - Novelle, Laterza 1910, I.djvu"		426
+"Bandello - Novelle, Laterza 1910, I.djvu"
 ```
 
 #### contest.conf.ini
@@ -63,6 +61,7 @@ The scripts queries the Wikisource API and counts the number of pages that have
 been proofread by a user.
 
 Results for every single book are cached in a JSON file called `books_cache.json`.
+
 To empty the cache delete the file. You can also remove individual books, you
 can use the [jq utility](https://stedolan.github.io/jq) to pretty-print the file
 and then modify it with any text editor or you can use an on-line tool such as
@@ -71,23 +70,53 @@ and then modify it with any text editor or you can use an on-line tool such as
 Here's a example of cached results for a book: 
 ```json
 {
-  "Fineo - Il rimedio infallibile.djvu": {
-    "punts": {
-      "BluesBrothers": 2,
-      "Zuleika72": 4,
-      "Luigi62": 38,
-      "Robybulga": 22,
-      "Sannita (ICCU)": 16
-    },
-    "revi": {
-      "BluesBrothers": 1,
-      "Zuleika72": 2,
-      "Luigi62": 19,
-      "Robybulga": 11,
-      "Sannita (ICCU)": 8
-    },
-    "vali": {}
+  "CACHE_BOOKS_LIST": {
+    "Fineo - Il rimedio infallibile.djvu": 90,
+    "Racconti sardi.djvu": 168,
+    "Slataper - Il mio carso, 1912.djvu": 124
   }
+  "Slataper - Il mio carso, 1912.djvu": {
+    "72": {
+      "query": {
+        "normalized": [
+          {
+            "from": "Page:Slataper - Il mio carso, 1912.djvu/72",
+            "to": "Pagina:Slataper - Il mio carso, 1912.djvu/72"
+          }
+        ],
+        "pages": {
+          "412498": {
+            "title": "Pagina:Slataper - Il mio carso, 1912.djvu/72",
+            "ns": 108,
+            "revisions": [
+              {
+                "contentformat": "text/x-wiki",
+                "contentmodel": "proofread-page",
+                "timestamp": "2015-12-04T13:32:34Z",
+                "user": "Robybulga",
+                "*": "...>"
+              },
+              {
+                "contentformat": "text/x-wiki",
+                "contentmodel": "proofread-page",
+                "timestamp": "2015-11-25T07:50:05Z",
+                "user": "Stefano mariucci",
+                "*": "..."
+              },
+              {
+                "contentformat": "text/x-wiki",
+                "contentmodel": "proofread-page",
+                "timestamp": "2015-09-02T18:33:12Z",
+                "user": "Phe-bot",
+                "*": "..."
+              }
+            ],
+            "pageid": 412498
+          }
+        }
+      },
+      "batchcomplete": ""
+    }
 }
 ```
 

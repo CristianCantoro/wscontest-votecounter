@@ -1,52 +1,50 @@
 # List of books participating in the Wikisource anniversary contest of 2015.
 #
 # FORMAT
-# book_name		num_pages
+# book_name
 #
-# Fields are separated tabs (\t). You can use as many tabs as you like.
-# 
 # Empty lines or lines starting with "#" are ignored.
 
-"Bandello - Novelle, Laterza 1910, I.djvu"														426
-"Fior di Sardegna (Racconti).djvu"																196
-"Racconti sardi.djvu"																			168
-"Slataper - Il mio carso, 1912.djvu"															124
-"D'Annunzio - Il libro delle vergini.djvu"														184
-"Basile - Lu cunto de li cunti, Vol.I.djvu"														511
-"Zibaldone di pensieri IV.djvu"																	451
-"Zibaldone di pensieri V.djvu"																	444
-"Zibaldone di pensieri VI.djvu"																	462
-"Zibaldone di pensieri VII.djvu"																496
-"Operette morali.djvu"																			436
-"Rime (Andreini).djvu"																			328
-"Rime (Cavalcanti).djvu"																		228
-"Eneide (Caro).djvu"																			668
-"Commedia - Inferno (Buti).djvu"																909
-"La Natura.djvu"																				410
-"Omero minore.djvu"																				222
-"Con gli occhi chiusi.djvu"																		260
-"Ultime lettere di Jacopo Ortis.djvu"															394
-"Deledda - Il sigillo d'amore, 1926.djvu"														318
-"Deledda - Le colpe altrui.djvu"																348
-"Sino al confine.djvu"																			340
-"La capanna dello zio Tom, 1871.djvu"															456
-"Serra - Scritti, Le Monnier, 1938, I.djvu"														504
-"Rivista di Scienza - Vol. II.djvu"																49
-"Vasco - Della moneta, 1788.djvu"																432
-"Sopra lo amore.djvu"																			456
-"L'Anticristo.djvu"																				273
-"Il crepuscolo degli idoli.djvu"																208
-"Bruno - Cena de le ceneri.djvu"																170
-"Ecce Homo (1922).djvu"																			78
-"Saul.djvu"																						174
-"Verginia.djvu"																					157
-"Tebaldo e Isolina.djvu"																		143
-"Le nebule.djvu"																				92
-"Mirtilla.djvu"																					120
-"Le congreganti.djvu"																			48
-"Marinetti - La cucina futurista, 1932.djvu"													63
-"Interiano - La vita et sito de Zychi, Aldo, 1502.djvu"											130
-"Nicolò Toneatti - Guida del viaggiatore per la città e per li dintorni di Trento, 1837.djvu"	48
-"Rosselli - Epulario, 1643.djvu"																284
-"Fineo - Il rimedio infallibile.djvu"															28
-"Trattato della neve e del bere fresco.djvu"													88
+"Bandello - Novelle, Laterza 1910, I.djvu"
+"Fior di Sardegna (Racconti).djvu"
+"Racconti sardi.djvu"
+"Slataper - Il mio carso, 1912.djvu"
+"D'Annunzio - Il libro delle vergini.djvu"
+"Basile - Lu cunto de li cunti, Vol.I.djvu"
+"Zibaldone di pensieri IV.djvu"
+"Zibaldone di pensieri V.djvu"
+"Zibaldone di pensieri VI.djvu"
+"Zibaldone di pensieri VII.djvu"
+"Operette morali.djvu"
+"Rime (Andreini).djvu"
+"Rime (Cavalcanti).djvu"
+"Eneide (Caro).djvu"
+"Commedia - Inferno (Buti).djvu"
+"La Natura.djvu"
+"Omero minore.djvu"
+"Con gli occhi chiusi.djvu"
+"Ultime lettere di Jacopo Ortis.djvu"
+"Deledda - Il sigillo d'amore, 1926.djvu"
+"Deledda - Le colpe altrui.djvu"
+"Sino al confine.djvu"
+"La capanna dello zio Tom, 1871.djvu"
+"Serra - Scritti, Le Monnier, 1938, I.djvu"
+"Rivista di Scienza - Vol. II.djvu"
+"Vasco - Della moneta, 1788.djvu"
+"Sopra lo amore.djvu"
+"L'Anticristo.djvu"
+"Il crepuscolo degli idoli.djvu"
+"Bruno - Cena de le ceneri.djvu"
+"Ecce Homo (1922).djvu"
+"Saul.djvu"
+"Verginia.djvu"
+"Tebaldo e Isolina.djvu"
+"Le nebule.djvu"
+"Mirtilla.djvu"
+"Le congreganti.djvu"
+"Marinetti - La cucina futurista, 1932.djvu"
+"Interiano - La vita et sito de Zychi, Aldo, 1502.djvu"
+"Nicolò Toneatti - Guida del viaggiatore per la città e per li dintorni di Trento, 1837.djvu"
+"Rosselli - Epulario, 1643.djvu"
+"Fineo - Il rimedio infallibile.djvu"
+"Trattato della neve e del bere fresco.djvu"

@@ -51,6 +51,7 @@ OUTPUT_HTML = 'index.html'
 
 # URLs
 WIKISOURCE_API = 'https://{lang}.wikisource.org/w/api.php'
+COMMONS_API = 'https://commons.wikimedia.org/w/api.php'
 ### ###
 
 ### logging ###
@@ -80,20 +81,6 @@ logger.setLevel(lvl_logger)
 ###
 
 
-def get_books(books_file):
-    with codecs.open(books_file, 'r', 'utf-8') as f:
-        lines = f.readlines()
-        lines = [line for line in lines
-                 if line.strip() and (not line.startswith("#"))]
-        clean_lines = ['\t'.join([el.strip('\"')
-                                  for el in line.split('\t') if el])
-                       for line in lines]
-
-    for line in clean_lines:
-        spl = line.split('\t', 2)
-        yield spl[0], int(spl[1])
-
-
 def read_cache(cache_file):
     logger.debug("Reading cache")
     try:
@@ -109,6 +96,50 @@ def write_cache(cache):
     logger.debug("Writing cache")
     with codecs.open(CACHE_FILE, 'w', 'utf-8') as f:
         json.dump(cache, f)
+
+
+def get_numpages(book):
+
+    params = {
+        'action': 'query',
+        'format': 'json',
+        'prop': 'imageinfo',
+        'titles': 'File:{book}'.format(book=book),
+        'iilimit': '50',
+        'iiprop': 'size'
+    }
+
+    params = urllib.parse.urlencode(params).encode('ascii')
+    logger.info("\tRequest image info for file 'File:{book}'".format(book=book))
+
+    with urllib.request.urlopen(COMMONS_API, params) as f:
+        data = json.loads(f.read().decode('utf-8'))
+        numpages = list(data['query']['pages'].values())[0]['imageinfo'][0]['pagecount']
+
+        return int(numpages)
+
+
+def get_books(books_file, cache_file):
+
+    booklist = 'CACHE_BOOKS_LIST'
+    cache = read_cache(cache_file)
+
+    if booklist not in cache:
+        cache[booklist] = dict()
+
+    with codecs.open(books_file, 'r', 'utf-8') as f:
+        lines = f.readlines()
+        clean_lines = [line.strip().strip('\"') for line in lines
+                       if line.strip() and (not line.startswith("#"))]
+
+    for book in clean_lines:
+        if book not in cache[booklist]:
+            end = get_numpages(book)
+            cache[booklist][book] = end
+
+            write_cache(cache)
+
+    return [(book, end) for book, end in cache[booklist].items()]
 
 
 def get_page_revisions(book, page, lang, cache_file):
@@ -133,7 +164,7 @@ def get_page_revisions(book, page, lang, cache_file):
         'rvprop': 'user|timestamp|content'
     }
     params = urllib.parse.urlencode(params).encode('ascii')
-    logger.info("\tRequest page 'Page:{}/{}'".format(book, page))
+    logger.info("\tRequest page 'Page:{book}/{page}'".format(book=book, page=page))
     with urllib.request.urlopen(WIKISOURCE_API.format(lang=lang),
                                 params) as f:
 
@@ -144,7 +175,7 @@ def get_page_revisions(book, page, lang, cache_file):
 
 def get_score(books_file, contest_start, contest_end, lang, cache_file):
     # defaults are 0
-    books = get_books(books_file)
+    books = get_books(books_file, cache_file)
     tot_punts = dict()
     tot_vali = dict()
     tot_revi = dict()
@@ -194,6 +225,11 @@ def get_score(books_file, contest_start, contest_end, lang, cache_file):
             old = a
             oldUser = b
             oldTimestamp = timestamp
+
+            logger.debug(punts)
+            logger.debug(vali)
+            logger.debug(revi)
+
 
         tot_punts = reduce(add, (Counter(punts), Counter(tot_punts)))
         tot_vali = reduce(add, (Counter(vali), Counter(tot_vali)))
