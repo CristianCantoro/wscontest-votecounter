@@ -139,6 +139,10 @@ also produce an HTML version of the output `index.html`.
 The HTML output uses a template `index.template.html` that expects to find a `{{{rows}}}`
 token to indicate where results will be written.
 
+If you need to produce a Wikitable from the TSV output, you can use one of this tools:
+* [CSV to Wikitable](http://mlei.net/shared/tool/csv-wiki.htm)
+* [Excel 2 Wiki](http://excel2wiki.net/) (if you open the TSV as a spreadsheet)
+
 ## Installation
 
 This script uses Python 3, it has been tested with Python 3.4.3.
