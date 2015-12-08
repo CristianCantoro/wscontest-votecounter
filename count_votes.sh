@@ -18,8 +18,8 @@ NUM_CHUNKS=$REPLY
 echo "Processing books in $NUM_CHUNKS chunks."
 
 rm -rf output_dir
-rm -f "books*_sublist.tsv*"
-rm -f "results*_sublist.tsv*"
+rm -f books*_sublist.tsv*
+rm -f results*_sublist.tsv*
 
 echo
 echo -n "Preparing book lists..."
@@ -28,7 +28,7 @@ NUM_BOOKS=$(wc -l < "united")
 BOOKS_PER_FILE=$(expr $NUM_BOOKS / $NUM_CHUNKS + 1)
 
 echo " each list will contain $BOOKS_PER_FILE books"
-split -l $BOOKS_PER_FILE --numeric-suffixes=01 --additional-suffix="_sublist.tsv" "united" "books"
+split -l $BOOKS_PER_FILE --numeric-suffixes=01 --additional-suffix="_sublist.tsv" united books
 rm united
 NUM_BOOK_LISTS=$(ls -1 books*_sublist.tsv | wc -l)
 
@@ -49,15 +49,15 @@ seq -w 01 $NUM_BOOK_LISTS | parallel -t --files --results output_dir $(which pyt
 echo
 echo "Books processed... removing temporary files"
 rm -rf output_dir
-rm -f "books*_sublist.tsv*"
+rm -f books*_sublist.tsv*
 
 echo
 echo "Merging results..."
-python  merge.py -v "results*_sublist.tsv"
+python  merge.py -v results*_sublist.tsv
 
 echo
 echo "Done... removing temporary files"
-rm -f "results*_sublist.tsv*"
+rm results*_sublist.tsv*
 
 echo
 echo "All done results are in results_tot.tsv"
