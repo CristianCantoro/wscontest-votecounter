@@ -5,6 +5,7 @@ books_cache*.json
 books*.tsv
 booklist*.json
 output_dir/
+*booklist_cache.json
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
