@@ -80,6 +80,7 @@ import urllib.parse
 import urllib.request
 
 # Try to use yajl, a faster module for JSON
+# import json
 try:
     import yajl as json
 except ImportError:
@@ -327,9 +328,14 @@ def get_html_rows(rows, lang):
 
 
 def get_rows(punts, vali, revi):
+    # sorting:
+    # results are ordered by:
+    # (punts desc, revi desc, vali desc, username asc)
+    # to obtain this first first sort by username ascending, then by
+    # (punts, revi, vali) descending
     return [(user, punts[user], vali[user], revi[user])
-            for user in sorted(punts.keys(),
-                               key=lambda u: punts[u],
+            for user in sorted(sorted(punts.keys()),
+                               key=lambda u: (punts[u], revi[u], vali[u])
                                reverse=True)
             ]
 

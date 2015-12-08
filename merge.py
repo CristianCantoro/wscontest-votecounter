@@ -128,15 +128,21 @@ def get_ranking(resfiles):
 
 
 def get_rows(ranking):
+    # sorting:
+    # results are ordered by:
+    # (punts desc, revi desc, vali desc, username asc)
+    # to obtain this first first sort by username ascending, then by
+    # (punts, revi, vali) descending
     return [(user,
              ranking[user]['punts'],
              ranking[user]['vali'],
              ranking[user]['revi']
              )
-            for user in sorted(ranking.keys(),
-                               key=lambda u: ranking[u]['punts'],
-                               reverse=True)
-            ]
+            for user in sorted(sorted(ranking.keys()),
+                               key=lambda u: (ranking[u]['punts'],
+                                              ranking[u]['revi'],
+                                              ranking[u]['vali']),
+                               reverse=True)]
 
 
 def write_results(ranking, output):

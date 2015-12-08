@@ -182,7 +182,7 @@ you should see no difference.
 You can launch the script on the different input file with the following command
 (analogously for `books02.tsv`, `books03.tsv`, `books04.tsv`):
 ```bash
-python score.py -f books01.tsv -o results01.tsv --cache books_cache01.json
+python score.py -f books01.tsv -o results01.tsv
 ```
 
 For best performance you should split the list in a balanced way with respect to the number
