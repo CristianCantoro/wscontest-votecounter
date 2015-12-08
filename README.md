@@ -155,10 +155,18 @@ This has been tested to work also in a virtualenv.
 
 ## Processing books in parallel
 
-You can split up your list of books in several files (say `books01.tsv`, `books02.tsv`,
-`books03.tsv`, `books04.tsv`) and process them in parallel.
+You can use the script `count_votes.sh` to process books in parallel,
+The script assumes you have [GNU parallel](https://www.gnu.org/software/parallel/) installed
+on your system.
 
-A way to split the original list of books is to use the following commands:
+Furthermore, the script assums the existence of the list of books in a file named "books.tsv"
+
+### count_votes.sh explained
+
+First, we split up the list of books in several files (say `books01.tsv`, `books02.tsv`,
+`books03.tsv`, `books04.tsv`) to process them in parallel.
+
+The splitting of the original list of books is obtained with the following commands:
 ```bash
 $ cat books.tsv | grep -v -e "#" | sort | sed '/^$/d' > united
 $ split -l 11 --numeric-suffixes=01 --additional-suffix=".tsv" united books
@@ -191,9 +199,10 @@ python score.py -f books01.tsv
 For best performance you should split the list in a balanced way with respect to the number
 of pages to process.
 
-You can process list in parallel using a tool like [GNU parallel](https://www.gnu.org/software/parallel/).
+Using [GNU parallel](https://www.gnu.org/software/parallel/) we can launch several processes in
+parallel.
 
-For example, to process `books01.tsv`, `...`, `books04.tsv` in parallel:
+Following our example, to process `books01.tsv`, `...`, `books04.tsv` in parallel:
 ```bash
 $ seq -w 01 04 | parallel -t --files --results output_dir python score.py -v -f books{}.tsv -o results{}.tsv
 ```
@@ -203,6 +212,8 @@ You can check the progress of each process with the command:
 ```bash
 $ tail -n 3 output_dir/1/*/stderr
 ```
+
+The results are merged using the `merge.py` script.
 
 ### Merging the results
 
