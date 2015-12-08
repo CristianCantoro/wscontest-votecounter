@@ -17,9 +17,9 @@ fi
 NUM_CHUNKS=$REPLY
 echo "Processing books in $NUM_CHUNKS chunks."
 
-rm -r output_dir
-rm -f "books??.tsv*"
-rm -f "results??.tsv*"
+rm -rf output_dir
+rm -f "books*_sublist.tsv*"
+rm -f "results*_sublist.tsv*"
 
 echo
 echo -n "Preparing book lists..."
@@ -28,9 +28,9 @@ NUM_BOOKS=$(wc -l < "united")
 BOOKS_PER_FILE=$(expr $NUM_BOOKS / $NUM_CHUNKS + 1)
 
 echo " each list will contain $BOOKS_PER_FILE books"
-split -l $BOOKS_PER_FILE --numeric-suffixes=01 --additional-suffix=".tsv" "united" "books"
+split -l $BOOKS_PER_FILE --numeric-suffixes=01 --additional-suffix="_sublist.tsv" "united" "books"
 rm united
-NUM_BOOK_LISTS=$(ls -1 books??.tsv | wc -l)
+NUM_BOOK_LISTS=$(ls -1 books*_sublist.tsv | wc -l)
 
 echo
 echo "There are $NUM_BOOK_LISTS sub-lists with $BOOKS_PER_FILE books per list"
@@ -44,20 +44,20 @@ echo "tail -n 3 output_dir/1/*/stderr"
 echo
 echo "***********************************************"
 echo
-seq -w 01 $NUM_BOOK_LISTS | parallel -t --files --results output_dir $(which python3) score.py -v -f books{}.tsv -o results{}.tsv
+seq -w 01 $NUM_BOOK_LISTS | parallel -t --files --results output_dir $(which python3) score.py -v -f books{}_sublist.tsv -o results{}_sublist.tsv
 
 echo
 echo "Books processed... removing temporary files"
-rm -r output_dir
-rm -f "books??.tsv*"
+rm -rf output_dir
+rm -f "books*_sublist.tsv*"
 
 echo
 echo "Merging results..."
-python  merge.py -v "results??.tsv" 
+python  merge.py -v "results*_sublist.tsv.tsv"
 
 echo
 echo "Done... removing temporary files"
-rm -f "results??.tsv*"
+rm -f "results*_sublist.tsv*"
 
 echo
 echo "All done results are in results_tot.tsv"
