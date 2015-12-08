@@ -172,7 +172,7 @@ python score.py -f books01.tsv -o results01.tsv --cache books_cache01.json
 For best performance you should split the list in a balanced way with respect to the number
 of pages to process.
 
-### Mergin the results
+### Merging the results
 
 To merge the results you can use the `merge.py` script.
 ```
@@ -188,15 +188,13 @@ positional arguments:
   ...                   Additional result files
 
 optional arguments:
-  -h, --help            show this help message and exit
-  --cache [CACHE_FILE [CACHE_FILE ...]]
-                        Merge cache files
-  --cache-output CACHE_OUTPUT
-                        JSON file to store the merged cache (requires --cache)
-                        (default: books_cache_tot.tsv)
-  -d                    Enable debug output (implies -v)
-  -o OUTPUT_TSV         Output file (default: results_tot.tsv)
-  -v                    Enable verbose output
+  -h, --help                                show this help message and exit
+  --cache [CACHE_FILE [CACHE_FILE ...]]     Merge cache files
+  --cache-output CACHE_OUTPUT               JSON file to store the merged cache (requires --cache)
+                                            (default: books_cache_tot.tsv)
+  -d                                        Enable debug output (implies -v)
+  -o OUTPUT_TSV                             Output file (default: results_tot.tsv)
+  -v                                        Enable verbose output
 ```
 
 Asuming that the results files are named `results01.tsv`, `results02.tsv`, `results03.tsv`
