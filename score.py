@@ -128,7 +128,7 @@ logger.setLevel(lvl_logger)
 
 
 def read_cache(cache_file):
-    logger.debug("Reading cache")
+    logger.debug("Reading cache: {}".format(cache_file))
     try:
         with codecs.open(cache_file, 'r', 'utf-8') as f:
             cache = json.load(f)
@@ -139,7 +139,7 @@ def read_cache(cache_file):
 
 
 def write_cache(cache, cache_file):
-    logger.debug("Writing cache")
+    logger.debug("Writing cache: {}".format(cache_file))
     with codecs.open(cache_file, 'w', 'utf-8') as f:
         json.dump(cache, f)
 
@@ -165,10 +165,12 @@ def get_numpages(book):
         return int(numpages)
 
 
-def get_books(books_file, cache_file):
+def get_books(books_file):
 
     booklist = 'CACHE_BOOKS_LIST'
-    cache = read_cache(cache_file)
+    booklist_cache = books_file + "booklist.cache"
+
+    cache = read_cache(booklist_cache)
 
     if booklist not in cache:
         cache[booklist] = dict()
@@ -183,7 +185,7 @@ def get_books(books_file, cache_file):
             end = get_numpages(book)
             cache[booklist][book] = end
 
-            write_cache(cache, cache_file)
+            write_cache(cache, booklist_cache)
 
     return [(book, end) for book, end in cache[booklist].items()]
 
@@ -233,7 +235,7 @@ def get_score(books_file,
               enable_cache,
               cache_file):
     # defaults are 0
-    books = get_books(books_file, cache_file)
+    books = get_books(books_file)
     tot_punts = dict()
     tot_vali = dict()
     tot_revi = dict()
