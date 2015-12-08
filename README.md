@@ -13,6 +13,7 @@ Count proofread and validated pages for the Wikisource contest.
 
 optional arguments:
   -h, --help                        show this help message and exit
+  --booklist-cache BOOKLIST_CACHE   JSON file to read and store the booklist cache
   --cache CACHE_FILE                JSON file to read and store the cache (default: books_cache.json)
   --config CONFIG_FILE              INI file to read configs (default: contest.conf.ini)
   -d                                Enable debug output (implies -v)
@@ -204,13 +205,16 @@ positional arguments:
   ...                   Additional result files
 
 optional arguments:
-  -h, --help                                show this help message and exit
-  --cache [CACHE_FILE [CACHE_FILE ...]]     Merge cache files
-  --cache-output CACHE_OUTPUT               JSON file to store the merged cache (requires --cache)
-                                            (default: books_cache_tot.tsv)
-  -d                                        Enable debug output (implies -v)
-  -o OUTPUT_TSV                             Output file (default: results_tot.tsv)
-  -v                                        Enable verbose output
+  -h, --help                                        show this help message and exit
+  --booklist [BOOKLIST_FILE [BOOKLIST_FILE ...]]    Merge booklist cache files
+  --booklist-output BOOKLIST_OUTPUT                 JSON file to store the merged cache (requires --booklist)
+                                                    (default: booklist_cache_tot.tsv)
+  --cache [CACHE_FILE [CACHE_FILE ...]]             Merge cache files
+  --cache-output CACHE_OUTPUT                       JSON file to store the merged cache (requires --cache)
+                                                    (default: books_cache_tot.tsv)
+  -d                                                Enable debug output (implies -v)
+  -o OUTPUT_TSV                                     Output file (default: results_tot.tsv)
+  -v                                                Enable verbose output
 ```
 
 Asuming that the results files are named `results01.tsv`, `results02.tsv`, `results03.tsv`

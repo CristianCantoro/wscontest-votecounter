@@ -9,15 +9,18 @@ This script is part of wscontest-votecounter.
 (<https://github.com/CristianCantoro/wscontest-votecounter>)
 
 ---
-usage: score.py [-h] [--cache CACHE_FILE] [--config CONFIG_FILE] [-d]
-                [--enable-cache] [-f BOOKS_FILE] [--html]
-                [--html-output OUTPUT_HTML] [--html-template TEMPLATE_FILE]
-                [-o OUTPUT_TSV] [-v]
+usage: score.py [-h] [--booklist-cache BOOKLIST_CACHE] [--cache CACHE_FILE]
+                [--config CONFIG_FILE] [-d] [--enable-cache] [-f BOOKS_FILE]
+                [--html] [--html-output OUTPUT_HTML]
+                [--html-template TEMPLATE_FILE] [-o OUTPUT_TSV] [-v]
 
 Count proofread and validated pages for the Wikisource contest.
 
 optional arguments:
   -h, --help            show this help message and exit
+  --booklist-cache BOOKLIST_CACHE
+                        JSON file to read and store the booklist cache
+                        (default: booklist_cache.json)
   --cache CACHE_FILE    JSON file to read and store the cache (default:
                         books_cache.json)
   --config CONFIG_FILE  INI file to read configs (default: contest.conf.ini)
@@ -91,6 +94,7 @@ except ImportError:
 BOOKS_FILE = "books.tsv"
 TEMPLATE_FILE = "index.template.html"
 CACHE_FILE = "books_cache.json"
+BOOKLIST_CACHE_FILE = "booklist_cache.json"
 CONFIG_FILE = "contest.conf.ini"
 OUTPUT_TSV = 'results.tsv'
 OUTPUT_HTML = 'index.html'
@@ -165,11 +169,9 @@ def get_numpages(book):
         return int(numpages)
 
 
-def get_books(books_file):
+def get_books(books_file, booklist_cache):
 
     booklist = 'CACHE_BOOKS_LIST'
-    booklist_cache = books_file + "booklist.cache"
-
     cache = read_cache(booklist_cache)
 
     if booklist not in cache:
@@ -232,10 +234,11 @@ def get_score(books_file,
               contest_start,
               contest_end,
               lang,
+              booklist_cache,
               enable_cache,
               cache_file):
     # defaults are 0
-    books = get_books(books_file)
+    books = get_books(books_file, booklist_cache)
     tot_punts = dict()
     tot_vali = dict()
     tot_revi = dict()
@@ -379,6 +382,7 @@ def main(config):
     contest_start = datetime.strptime(config['contest']['start_date'], "%Y-%m-%d %H:%M:%S")
     contest_end = datetime.strptime(config['contest']['end_date'], "%Y-%m-%d %H:%M:%S")
     lang = config['contest']['language']
+    booklist_cache = config['booklist_cache']
     cache_file = config['cache_file']
     enable_cache = config['enable_cache']
     output = config['output']
@@ -388,6 +392,7 @@ def main(config):
                        contest_start,
                        contest_end,
                        lang,
+                       booklist_cache,
                        enable_cache,
                        cache_file
                        )
@@ -404,6 +409,8 @@ if __name__ == '__main__':
 
     DESCRIPTION = 'Count proofread and validated pages for the Wikisource contest.'
     parser = argparse.ArgumentParser(description=DESCRIPTION)
+    parser.add_argument('--booklist-cache', default=BOOKLIST_CACHE_FILE, metavar='BOOKLIST_CACHE',
+                        help='JSON file to read and store the booklist cache (default: {})'.format(BOOKLIST_CACHE_FILE))
     parser.add_argument('--cache', default=CACHE_FILE, metavar='CACHE_FILE',
                         help='JSON file to read and store the cache (default: {})'.format(CACHE_FILE))
     parser.add_argument('--config', default=CONFIG_FILE, metavar='CONFIG_FILE',
@@ -431,6 +438,7 @@ if __name__ == '__main__':
     config = read_config(config_file)
 
     config['books_file'] = args.f
+    config['booklist_cache'] = args.booklist
     config['cache_file'] = args.cache
     config['enable_cache'] = args.enable_cache
     config['html'] = args.html

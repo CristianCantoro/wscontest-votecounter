@@ -5,7 +5,9 @@ merge.py
 A script to merge results from score.py
 
 ---
-usage: merge.py [-h] [--cache [CACHE_FILE [CACHE_FILE ...]]]
+usage: merge.py [-h] [--booklist [BOOKLIST_FILE [BOOKLIST_FILE ...]]]
+                [--booklist-output BOOKLIST_OUTPUT]
+                [--cache [CACHE_FILE [CACHE_FILE ...]]]
                 [--cache-output CACHE_OUTPUT] [-d] [-o OUTPUT_TSV] [-v]
                 FILE1 FILE2 ...
 
@@ -18,6 +20,11 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
+  --booklist [BOOKLIST_FILE [BOOKLIST_FILE ...]]
+                        Merge booklist cache files
+  --booklist-output BOOKLIST_OUTPUT
+                        JSON file to store the merged cache (requires
+                        --booklist) (default: booklist_cache_tot.tsv)
   --cache [CACHE_FILE [CACHE_FILE ...]]
                         Merge cache files
   --cache-output CACHE_OUTPUT
@@ -61,6 +68,7 @@ from collections import defaultdict
 # Files
 OUTPUT_TSV = 'results_tot.tsv'
 CACHE_OUTPUT = 'books_cache_tot.tsv'
+BOOKLIST_OUTPUT = 'booklist_cache_tot.tsv'
 
 # Globals
 CSV_FIELDS = ['user', 'punts', 'vali', 'revi']
@@ -160,7 +168,7 @@ def write_results(ranking, output):
 
 
 def read_cache(cache_file):
-    logger.debug("Reading cache")
+    logger.debug("Reading cache: {}".format(cache_file))
     with codecs.open(cache_file, 'r', 'utf-8') as f:
         cache = json.load(f)
 
@@ -169,23 +177,21 @@ def read_cache(cache_file):
 
 def merge_cache(cachefiles):
     cache = dict()
-    booklist = 'CACHE_BOOKS_LIST'
-    cache[booklist] = dict()
 
     for cachef in cachefiles:
         cache_part = read_cache(cachef)
 
-        cache[booklist].update(cache_part[booklist])
-        for key in cache.keys():
-            if key == booklist:
-                continue
-            cache[key] = cache_part[key]
+        for key in cache_part.keys():
+            if key not in cache:
+                cache[key] = cache_part[key]
+            else:
+                cache[key].update(cache_part[key])
 
     return cache
 
 
 def write_cache(cache, cache_output):
-    logger.debug("Writing cache")
+    logger.debug("Writing cache: {}".format(cache_output))
     with codecs.open(cache_output, 'w', 'utf-8') as f:
         json.dump(cache, f)
 
@@ -202,6 +208,12 @@ def main(resfiles, config):
         cache = merge_cache(cachefiles)
         write_cache(cache, cache_output)
 
+    if config['booklist']:
+        booklistfiles = config['booklist']
+        booklist_output = config['booklist_output']
+        booklist = merge_cache(booklistfiles)
+        write_cache(booklist_output)
+
 
 if __name__ == '__main__':
 
@@ -213,6 +225,10 @@ if __name__ == '__main__':
                         help='Result file no. 2')
     parser.add_argument('resfile_others', metavar='...', nargs=argparse.REMAINDER,
                         help='Additional result files')
+    parser.add_argument('--booklist', nargs='*', metavar='BOOKLIST_FILE',
+                        help='Merge booklist cache files')
+    parser.add_argument('--booklist-output', default=BOOKLIST_OUTPUT, metavar='BOOKLIST_OUTPUT',
+                        help='JSON file to store the merged cache (requires --booklist) (default: {})'.format(BOOKLIST_OUTPUT))
     parser.add_argument('--cache', nargs='*', metavar='CACHE_FILE',
                         help='Merge cache files')
     parser.add_argument('--cache-output', default=CACHE_OUTPUT, metavar='CACHE_OUTPUT',
@@ -234,6 +250,8 @@ if __name__ == '__main__':
         resfiles = resfiles + args.resfile_others
 
     config = dict()
+    config['booklist'] = args.booklist
+    config['booklist_output'] = args.booklist_output
     config['cache'] = args.cache
     config['cache_output'] = args.cache_output
     config['output'] = args.o
