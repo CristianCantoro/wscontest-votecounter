@@ -159,41 +159,42 @@ You can use the script `count_votes.sh` to process books in parallel,
 The script assumes you have [GNU parallel](https://www.gnu.org/software/parallel/) installed
 on your system.
 
-Furthermore, the script assums the existence of the list of books in a file named "books.tsv"
+Furthermore, the script assums the existence of the list of books in a file named `books.tsv`.
 
 ### count_votes.sh explained
 
-First, we split up the list of books in several files (say `books01.tsv`, `books02.tsv`,
-`books03.tsv`, `books04.tsv`) to process them in parallel.
+First, we split up the list of books in several files (say `books01_sublist.tsv`,
+`books02_sublist.tsv`, `books03_sublist.tsv`, `books04_sublist.tsv`) to process them in
+parallel.
 
 The splitting of the original list of books is obtained with the following commands:
 ```bash
 $ cat books.tsv | grep -v -e "#" | sort | sed '/^$/d' > united
-$ split -l 11 --numeric-suffixes=01 --additional-suffix=".tsv" united books
+$ split -l 11 --numeric-suffixes=01 --additional-suffix="_sublist.tsv" united books
 ```
 The first line creates a list of books removing empty lines and lines starting with `#`
 and saves it to a file named `united`. The second line split the content of `united`
-in smaller files named `books01.tsv`, `books01.tsv`, etc. with 11 lines per file
-(`-l 11` option).
+in smaller files named `books01_sublist.tsv`, `books02_sublist.tsv`, etc. with up to
+11 lines per file (`-l 11` option).
 
 If you split the files by hand, a way to check if the original list (`books.tsv`) and
 the new lists contain the same books you can do the following:
 
 ```bash
 $ cat books.tsv | grep -v -e "#" | sort | sed '/^$/d' > united
-$ cat books??.tsv | grep -v -e "#" | sort | sed '/^$/d' > separated
+$ cat books*_sublist.tsv | grep -v -e "#" | sort | sed '/^$/d' > separated
 $ diff united separated
 ```
 The first line creates a list of books removing empty lines and lines starting with `#`
-and saves it to a file named `united`. The second line does the same for `books01.tsv`, `...`,
-`books04.tsv` and saves the results in a file named `separated`.
+and saves it to a file named `united`. The second line does the same for `books01_sublist.tsv.tsv`,
+`...`, `books04_sublist.tsv` and saves the results in a file named `separated`.
 The third line compares the two results. If you split the books in the new lists correctly,
 you should see no difference.
 
 You can launch the script on the different input file with the following command
-(analogously for `books02.tsv`, `books03.tsv`, `books04.tsv`):
+(analogously for `books02_sublist.tsv`, `books03_sublist.tsv`, `books04_sublist.tsv`):
 ```bash
-python score.py -f books01.tsv
+python score.py -f books01_sublist.tsv
 ```
 
 For best performance you should split the list in a balanced way with respect to the number
@@ -202,11 +203,11 @@ of pages to process.
 Using [GNU parallel](https://www.gnu.org/software/parallel/) we can launch several processes in
 parallel.
 
-Following our example, to process `books01.tsv`, `...`, `books04.tsv` in parallel:
+Following our example, to process `books01_sublist.tsv`, `...`, `books04_sublist.tsv` in parallel:
 ```bash
-$ seq -w 01 04 | parallel -t --files --results output_dir python score.py -v -f books{}.tsv -o results{}.tsv
+$ seq -w 01 04 | parallel -t --files --results output_dir $(which python3) score.py -v -f books{}_sublist.tsv -o results{}_sublist.tsv
 ```
-The results will be saved in files `results01.tsv`, `...`, `results04.tsv`.
+The results will be saved in files `results01_sublist.tsv`, `...`, `results04_sublist.tsv`.
 
 You can check the progress of each process with the command:
 ```bash
@@ -243,9 +244,10 @@ optional arguments:
   -v                                                Enable verbose output
 ```
 
-Asuming that the results files are named `results01.tsv`, `results02.tsv`, `results03.tsv`
-and `results04.tsv` you can merge them with:
+Assuming that the results files are named `results01_sublist.tsv`, `results02_sublist.tsv`,
+`results03_sublist.tsv` and `results04_sublist.tsv` as from the previous section,
+you can merge them with the following command:
 ```bash
-$ python  merge.py results01.tsv results02.tsv results03.tsv results04.tsv
+$ python  merge.py results*_sublist.tsv
 ```
 the results are written to `results_tot.tsv`
