@@ -213,6 +213,10 @@ You can check the progress of each process with the command:
 ```bash
 $ tail -n 3 output_dir/1/*/stderr
 ```
+or to have a dynamic picture of the situation:
+```bash
+$ watch -n 1 -p -c tail -n 3 output_dir/1/*/stderr
+```
 
 The results are merged using the `merge.py` script.
 
