@@ -170,18 +170,22 @@ def get_books(books_file, cache_file):
     return [(book, end) for book, end in cache[booklist].items()]
 
 
-def get_page_revisions(book, page, lang, cache_file):
+def get_page_revisions(book, page, lang, disable_cache, cache_file):
 
-    cache = read_cache(cache_file)
+    cache = None
+    if not disable_cache:
+        cache = read_cache(cache_file)
+
     page = str(page)
     # Request is cached
-    if book in cache and page in cache[book]:
+    if (not disable_cache) and (book in cache) and (page in cache[book]):
         logger.info("Request is cached...")
         return cache[book][page]
 
     # Request is NOT cached
     if book not in cache:
-        cache[book] = dict()
+        if not disable_cache:
+            cache[book] = dict()
 
     params = {
         'action': 'query',
@@ -196,12 +200,21 @@ def get_page_revisions(book, page, lang, cache_file):
     with urllib.request.urlopen(WIKISOURCE_API.format(lang=lang),
                                 params) as f:
 
-        cache[book][page] = json.loads(f.read().decode('utf-8'))
-        write_cache(cache, cache_file)
-        return cache[book][page]
+        data = json.loads(f.read().decode('utf-8'))
+        if not disable_cache:
+            cache[book][page] = data
+            write_cache(cache, cache_file)
+            return cache[book][page]
+        else:
+            return data
 
 
-def get_score(books_file, contest_start, contest_end, lang, cache_file):
+def get_score(books_file,
+              contest_start,
+              contest_end,
+              lang,
+              disable_cache,
+              cache_file):
     # defaults are 0
     books = get_books(books_file, cache_file)
     tot_punts = dict()
@@ -217,7 +230,11 @@ def get_score(books_file, contest_start, contest_end, lang, cache_file):
 
         logger.info("Querying the API...")
         for pag in range(1, end + 1):
-            query = get_page_revisions(book, pag, lang, cache_file)
+            query = get_page_revisions(book,
+                                       pag,
+                                       lang,
+                                       disable_cache,
+                                       cache_file)
             try:
                 revs = list(query['query']['pages'].values())[0]['revisions'][::-1]
             except KeyError:
@@ -339,10 +356,18 @@ def main(config):
     contest_end = datetime.strptime(config['contest']['end_date'], "%Y-%m-%d %H:%M:%S")
     lang = config['contest']['language']
     cache_file = config['cache_file']
+    disable_cache = config['disable_cache']
     output = config['output']
     output_html = config['html_output']
 
-    scores = get_score(books_file, contest_start, contest_end, lang, cache_file)
+    scores = get_score(books_file,
+                       contest_start,
+                       contest_end,
+                       lang,
+                       disable_cache,
+                       cache_file
+                       )
+
     rows = get_rows(*scores)
 
     write_csv(rows, output)
@@ -361,6 +386,8 @@ if __name__ == '__main__':
                         help='INI file to read configs (default: {})'.format(CONFIG_FILE))
     parser.add_argument('-d', action='store_true',
                         help='Enable debug output (implies -v)')
+    parser.add_argument('--disable-cache', action='store_true',
+                        help='Disable caching')
     parser.add_argument('-f', default=BOOKS_FILE, metavar='BOOKS_FILE',
                         help='TSV file with the books to be processed (default: {})'.format(BOOKS_FILE))
     parser.add_argument('--html', action='store_true',
@@ -381,6 +408,7 @@ if __name__ == '__main__':
 
     config['books_file'] = args.f
     config['cache_file'] = args.cache
+    config['disable_cache'] = args.disable_cache
     config['html'] = args.html
     config['html_template'] = args.html_template
     config['html_output'] = args.html_output
