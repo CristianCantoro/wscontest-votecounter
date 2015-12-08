@@ -438,7 +438,7 @@ if __name__ == '__main__':
     config = read_config(config_file)
 
     config['books_file'] = args.f
-    config['booklist_cache'] = args.booklist
+    config['booklist_cache'] = args.booklist_cache
     config['cache_file'] = args.cache
     config['enable_cache'] = args.enable_cache
     config['html'] = args.html
