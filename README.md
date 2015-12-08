@@ -16,7 +16,7 @@ optional arguments:
   --cache CACHE_FILE                JSON file to read and store the cache (default: books_cache.json)
   --config CONFIG_FILE              INI file to read configs (default: contest.conf.ini)
   -d                                Enable debug output (implies -v)
-  --disable-cache                   Disable caching
+  --enable-caching                  Enable caching
   -f BOOKS_FILE                     TSV file with the books to be processed (default: books.tsv)
   --html                            Produce HTML output
   --html-output OUTPUT_HTML         Output file for the HTML output (default: index.html)
@@ -67,10 +67,15 @@ been proofread by a user.
 
 Results for every single book are cached in a JSON file called `books_cache.json`.
 
-To empty the cache delete the file. You can also remove individual books, you
-can use the [jq utility](https://stedolan.github.io/jq) to pretty-print the file
-and then modify it with any text editor or you can use an on-line tool such as
-[JSONlint](http://jsonlint.com/).
+Keep in mind that caching slows down the script (because the cache is continuosly
+read and written), for this reason caching is can be optionally enabled with the
+option `--enable-caching`.
+
+To empty the cache delete the cache file.
+
+You can also remove individual books, you can use the [jq utility](https://stedolan.github.io/jq)
+to pretty-print the file and then modify it with any text editor or you can use
+an on-line tool such as [JSONlint](http://jsonlint.com/).
 
 Here's a example of cached results for a book: 
 ```json

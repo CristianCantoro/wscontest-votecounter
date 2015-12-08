@@ -6,10 +6,11 @@ A script to count proofread and validated pages for the Wikisource anniversary
 contest.
 
 usage: score.py [-h] [--cache CACHE_FILE] [--config CONFIG_FILE] [-d]
-                [-f BOOKS_FILE] [--html] [--html-output OUTPUT_HTML]
-                [--html-template TEMPLATE_FILE] [-o OUTPUT_TSV] [-v]
+                [--enable-caching] [-f BOOKS_FILE] [--html]
+                [--html-output OUTPUT_HTML] [--html-template TEMPLATE_FILE]
+                [-o OUTPUT_TSV] [-v]
 
-Count proofread pages for the Wikisource contest.
+Count proofread and validated pages for the Wikisource contest.
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -17,6 +18,7 @@ optional arguments:
                         books_cache.json)
   --config CONFIG_FILE  INI file to read configs (default: contest.conf.ini)
   -d                    Enable debug output (implies -v)
+  --enable-caching      Enable caching
   -f BOOKS_FILE         TSV file with the books to be processed (default:
                         books.tsv)
   --html                Produce HTML output
@@ -170,21 +172,21 @@ def get_books(books_file, cache_file):
     return [(book, end) for book, end in cache[booklist].items()]
 
 
-def get_page_revisions(book, page, lang, disable_cache, cache_file):
+def get_page_revisions(book, page, lang, enable_cache, cache_file):
 
     cache = None
-    if not disable_cache:
+    if enable_cache:
         cache = read_cache(cache_file)
 
     page = str(page)
     # Request is cached
-    if (not disable_cache) and (book in cache) and (page in cache[book]):
+    if enable_cache and (book in cache) and (page in cache[book]):
         logger.info("Request is cached...")
         return cache[book][page]
 
     # Request is NOT cached
     if book not in cache:
-        if not disable_cache:
+        if enable_cache:
             cache[book] = dict()
 
     params = {
@@ -201,7 +203,7 @@ def get_page_revisions(book, page, lang, disable_cache, cache_file):
                                 params) as f:
 
         data = json.loads(f.read().decode('utf-8'))
-        if not disable_cache:
+        if enable_cache:
             cache[book][page] = data
             write_cache(cache, cache_file)
             return cache[book][page]
@@ -213,7 +215,7 @@ def get_score(books_file,
               contest_start,
               contest_end,
               lang,
-              disable_cache,
+              enable_cache,
               cache_file):
     # defaults are 0
     books = get_books(books_file, cache_file)
@@ -233,7 +235,7 @@ def get_score(books_file,
             query = get_page_revisions(book,
                                        pag,
                                        lang,
-                                       disable_cache,
+                                       enable_cache,
                                        cache_file)
             try:
                 revs = list(query['query']['pages'].values())[0]['revisions'][::-1]
@@ -356,7 +358,7 @@ def main(config):
     contest_end = datetime.strptime(config['contest']['end_date'], "%Y-%m-%d %H:%M:%S")
     lang = config['contest']['language']
     cache_file = config['cache_file']
-    disable_cache = config['disable_cache']
+    enable_cache = config['enable_cache']
     output = config['output']
     output_html = config['html_output']
 
@@ -364,7 +366,7 @@ def main(config):
                        contest_start,
                        contest_end,
                        lang,
-                       disable_cache,
+                       enable_cache,
                        cache_file
                        )
 
@@ -386,8 +388,8 @@ if __name__ == '__main__':
                         help='INI file to read configs (default: {})'.format(CONFIG_FILE))
     parser.add_argument('-d', action='store_true',
                         help='Enable debug output (implies -v)')
-    parser.add_argument('--disable-cache', action='store_true',
-                        help='Disable caching')
+    parser.add_argument('--enable-caching', action='store_true',
+                        help='Enable caching')
     parser.add_argument('-f', default=BOOKS_FILE, metavar='BOOKS_FILE',
                         help='TSV file with the books to be processed (default: {})'.format(BOOKS_FILE))
     parser.add_argument('--html', action='store_true',
@@ -408,7 +410,7 @@ if __name__ == '__main__':
 
     config['books_file'] = args.f
     config['cache_file'] = args.cache
-    config['disable_cache'] = args.disable_cache
+    config['enable_cache'] = args.enable_cache
     config['html'] = args.html
     config['html_template'] = args.html_template
     config['html_output'] = args.html_output
