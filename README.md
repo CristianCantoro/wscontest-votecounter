@@ -6,8 +6,7 @@ A script to count votes for the Wikisource anniversary contest.
 ```bash
 usage: score.py [-h] [--booklist-cache BOOKLIST_CACHE] [--cache CACHE_FILE]
                 [--config CONFIG_FILE] [-d] [--enable-cache] [-f BOOKS_FILE]
-                [--html] [--html-output OUTPUT_HTML]
-                [--html-template TEMPLATE_FILE] [-o OUTPUT_TSV] [-v]
+                [-o OUTPUT_TSV] [-v]
 
 Count proofread and validated pages for the Wikisource contest.
 
@@ -20,12 +19,11 @@ optional arguments:
   --config CONFIG_FILE              INI file to read configs (default: contest.conf.ini)
   -d                                Enable debug output (implies -v)
   --enable-cache                    Enable caching
-  -f BOOKS_FILE                     TSV file with the books to be processed (default: books.tsv)
-  --html                            Produce HTML output
-  --html-output OUTPUT_HTML         Output file for the HTML output (default: {BOOKS_FILE}.index.html)
-  --html-template TEMPLATE_FILE     Template file for the HTML output (default: index.template.html)
-  -o OUTPUT_TSV         Output file (default: {BOOKS_FILE}.results.tsv)
+  -f BOOKS_FILE                     TSV file with the books to be processed
+                                    (default: books.tsv)
+  -o OUTPUT_TSV                     Output file (default: {BOOKS_FILE}.results.tsv)
   -v                                Enable verbose output
+
 ```
 
 ### Input
@@ -228,15 +226,18 @@ The results are merged using the `merge.py` script.
 
 To merge the results you can use the `merge.py` script.
 ```
-usage: merge.py [-h] [--cache [CACHE_FILE [CACHE_FILE ...]]]
-                [--cache-output CACHE_OUTPUT] [-d] [-o OUTPUT_TSV] [-v]
-                FILE1 FILE2 ...
+usage: merge.py [-h] [--booklist [BOOKLIST_FILE [BOOKLIST_FILE ...]]]
+                [--booklist-output BOOKLIST_OUTPUT]
+                [--cache [CACHE_FILE [CACHE_FILE ...]]]
+                [--cache-output CACHE_OUTPUT] [--config CONFIG_FILE] [-d]
+                [-o OUTPUT_TSV] [--html] [--html-output OUTPUT_HTML]
+                [--html-template TEMPLATE_FILE] [-v]
+                FILE1 ...
 
 Merge results from score.py.
 
 positional arguments:
   FILE1                 Result file no. 1
-  FILE2                 Result file no. 2
   ...                   Additional result files
 
 optional arguments:
@@ -247,8 +248,14 @@ optional arguments:
   --cache [CACHE_FILE [CACHE_FILE ...]]             Merge cache files
   --cache-output CACHE_OUTPUT                       JSON file to store the merged cache (requires --cache)
                                                     (default: books_cache_tot.tsv)
+  --config CONFIG_FILE  INI file to read configs    (default: contest.conf.ini)
   -d                                                Enable debug output (implies -v)
   -o OUTPUT_TSV                                     Output file (default: results_tot.tsv)
+  --html                                            Produce HTML output
+  --html-output OUTPUT_HTML                         Output file for the HTML output
+                                                    (default: {OUTPUT_TSV}.index.html)
+  --html-template TEMPLATE_FILE                     Template file for the HTML output
+                                                    (default: index.template.html)
   -v                                                Enable verbose output
 ```
 

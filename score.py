@@ -11,8 +11,7 @@ This script is part of wscontest-votecounter.
 ---
 usage: score.py [-h] [--booklist-cache BOOKLIST_CACHE] [--cache CACHE_FILE]
                 [--config CONFIG_FILE] [-d] [--enable-cache] [-f BOOKS_FILE]
-                [--html] [--html-output OUTPUT_HTML]
-                [--html-template TEMPLATE_FILE] [-o OUTPUT_TSV] [-v]
+                [-o OUTPUT_TSV] [-v]
 
 Count proofread and validated pages for the Wikisource contest.
 
@@ -28,13 +27,6 @@ optional arguments:
   --enable-cache        Enable caching
   -f BOOKS_FILE         TSV file with the books to be processed (default:
                         books.tsv)
-  --html                Produce HTML output
-  --html-output OUTPUT_HTML
-                        Output file for the HTML output (default:
-                        {BOOKS_FILE}.index.html)
-  --html-template TEMPLATE_FILE
-                        Template file for the HTML output (default:
-                        index.template.html)
   -o OUTPUT_TSV         Output file (default: {BOOKS_FILE}.results.tsv)
   -v                    Enable verbose output
 
@@ -79,7 +71,6 @@ from collections import Counter
 from functools import reduce
 from operator import add
 from datetime import datetime
-from html import escape
 import urllib.parse
 import urllib.request
 
@@ -93,12 +84,10 @@ except ImportError:
 ### GLOBALS AND DEFAULTS ###
 # Files
 BOOKS_FILE = "books.tsv"
-TEMPLATE_FILE = "index.template.html"
 CACHE_FILE = "{BOOKS_FILE}.cache.json"
 BOOKLIST_CACHE_FILE = "{BOOKS_FILE}.booklist_cache.json"
 CONFIG_FILE = "contest.conf.ini"
 OUTPUT_TSV = '{BOOKS_FILE}.results.tsv'
-OUTPUT_HTML = '{BOOKS_FILE}.index.html'
 
 # URLs
 WIKISOURCE_API = 'https://{lang}.wikisource.org/w/api.php'
@@ -318,21 +307,6 @@ def get_score(books_file,
     return tot_punts, tot_vali, tot_revi
 
 
-def format_user(name, lang):
-    user_string = '<a href="//{lang}.wikisource.org/wiki/User:{name}">{name}</a>'
-    return user_string.format(lang=lang, name=escape(name))
-
-
-def get_html_rows(rows, lang):
-    table_string = '<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td></tr>'
-    return [table_string.format(format_user(user, lang),
-                                user_punts,
-                                user_vali,
-                                user_revi)
-            for user, user_punts, user_vali, user_revi in rows
-            ] 
-
-
 def get_rows(punts, vali, revi):
     # sorting:
     # results are ordered by:
@@ -342,18 +316,7 @@ def get_rows(punts, vali, revi):
     return [(user, punts[user], vali[user], revi[user])
             for user in sorted(sorted(punts.keys()),
                                key=lambda u: (punts[u], revi[u], vali[u]),
-                               reverse=True)
-            ]
-
-
-def write_html(rows, lang, output_html):
-    with open(config['html_template'], 'r') as f:
-        template = f.read()
-
-    html_rows = get_html_rows(rows, lang=lang)
-    content = template.replace("{{{rows}}}", '\n'.join(html_rows))
-    with codecs.open(output_html, 'w', 'utf-8') as f:
-        f.write(content)
+                               reverse=True)]
 
 
 def write_csv(rows, output):
@@ -387,7 +350,6 @@ def main(config):
     cache_file = config['cache_file']
     enable_cache = config['enable_cache']
     output = config['output']
-    output_html = config['html_output']
 
     scores = get_score(books_file,
                        contest_start,
@@ -401,9 +363,6 @@ def main(config):
     rows = get_rows(*scores)
 
     write_csv(rows, output)
-
-    if config['html']:
-        write_html(rows, lang, output_html)
 
 
 if __name__ == '__main__':
@@ -422,12 +381,6 @@ if __name__ == '__main__':
                         help='Enable caching')
     parser.add_argument('-f', default=BOOKS_FILE, metavar='BOOKS_FILE',
                         help='TSV file with the books to be processed (default: {})'.format(BOOKS_FILE))
-    parser.add_argument('--html', action='store_true',
-                        help='Produce HTML output')
-    parser.add_argument('--html-output', default=OUTPUT_HTML, metavar='OUTPUT_HTML',
-                        help='Output file for the HTML output (default: {})'.format(OUTPUT_HTML))
-    parser.add_argument('--html-template', default=TEMPLATE_FILE, metavar='TEMPLATE_FILE',
-                        help='Template file for the HTML output (default: {})'.format(TEMPLATE_FILE))
     parser.add_argument('-o', default=OUTPUT_TSV, metavar='OUTPUT_TSV',
                         help='Output file (default: {})'.format(OUTPUT_TSV))
     parser.add_argument('-v', action='store_true',
@@ -437,8 +390,6 @@ if __name__ == '__main__':
 
     config_file = args.config
     config = read_config(config_file)
-
-    # OUTPUT_HTML = '{BOOKS_FILE}.index.html'
 
     config['books_file'] = args.f
 
@@ -456,15 +407,6 @@ if __name__ == '__main__':
             BOOKS_FILE=config['books_file'])
     else:
         config['cache_file'] = args.cache
-
-    # HTML output
-    config['html'] = args.html
-    config['html_template'] = args.html_template
-    if "BOOKS_FILE" in args.html_output:
-        config['html_output'] = args.html_output.format(
-            BOOKS_FILE=config['books_file'])
-    else:
-        config['html_output'] = args.html_output
 
     # TSV output
     if "BOOKS_FILE" in args.o:

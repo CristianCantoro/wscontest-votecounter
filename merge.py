@@ -8,14 +8,15 @@ A script to merge results from score.py
 usage: merge.py [-h] [--booklist [BOOKLIST_FILE [BOOKLIST_FILE ...]]]
                 [--booklist-output BOOKLIST_OUTPUT]
                 [--cache [CACHE_FILE [CACHE_FILE ...]]]
-                [--cache-output CACHE_OUTPUT] [-d] [-o OUTPUT_TSV] [-v]
-                FILE1 FILE2 ...
+                [--cache-output CACHE_OUTPUT] [--config CONFIG_FILE] [-d]
+                [-o OUTPUT_TSV] [--html] [--html-output OUTPUT_HTML]
+                [--html-template TEMPLATE_FILE] [-v]
+                FILE1 ...
 
 Merge results from score.py.
 
 positional arguments:
   FILE1                 Result file no. 1
-  FILE2                 Result file no. 2
   ...                   Additional result files
 
 optional arguments:
@@ -30,8 +31,16 @@ optional arguments:
   --cache-output CACHE_OUTPUT
                         JSON file to store the merged cache (requires --cache)
                         (default: books_cache_tot.tsv)
+  --config CONFIG_FILE  INI file to read configs (default: contest.conf.ini)
   -d                    Enable debug output (implies -v)
   -o OUTPUT_TSV         Output file (default: results_tot.tsv)
+  --html                Produce HTML output
+  --html-output OUTPUT_HTML
+                        Output file for the HTML output (default:
+                        {OUTPUT_TSV}.index.html)
+  --html-template TEMPLATE_FILE
+                        Template file for the HTML output (default:
+                        index.template.html)
   -v                    Enable verbose output
 
 ---
@@ -62,13 +71,19 @@ import json
 import codecs
 import logging
 import argparse
+import configparser
+from html import escape
 from collections import defaultdict
 
 ### GLOBALS AND DEFAULTS ###
 # Files
 OUTPUT_TSV = 'results_tot.tsv'
-CACHE_OUTPUT = 'books_cache_tot.tsv'
 BOOKLIST_OUTPUT = 'booklist_cache_tot.tsv'
+CACHE_OUTPUT = 'books_cache_tot.tsv'
+CONFIG_FILE = "contest.conf.ini"
+TEMPLATE_FILE = "index.template.html"
+OUTPUT_HTML = '{OUTPUT_TSV}.index.html'
+
 
 # Globals
 CSV_FIELDS = ['user', 'punts', 'vali', 'revi']
@@ -153,6 +168,32 @@ def get_rows(ranking):
                                reverse=True)]
 
 
+
+def format_user(name, lang):
+    user_string = '<a href="//{lang}.wikisource.org/wiki/User:{name}">{name}</a>'
+    return user_string.format(lang=lang, name=escape(name))
+
+
+def get_html_rows(ranking, lang):
+    table_string = '<tr><td>{user}</td><td>{punts}</td><td>{vali}</td><td>{revi}</td></tr>'
+    return [table_string.format(user=format_user(user, lang),
+                                punts=user_punts,
+                                vali=user_vali,
+                                revi=user_revi)
+            for user, user_punts, user_vali, user_revi
+            in get_rows(ranking)]
+
+
+def write_html(ranking, lang, html_template, output_html):
+    with open(html_template, 'r') as f:
+        template = f.read()
+
+    html_rows = get_html_rows(ranking, lang=lang)
+    content = template.replace("{{{rows}}}", '\n'.join(html_rows))
+    with codecs.open(output_html, 'w', 'utf-8') as f:
+        f.write(content)
+
+
 def write_results(ranking, output):
     with open(output, 'w') as csvfile:
         writer = csv.DictWriter(csvfile,
@@ -196,11 +237,27 @@ def write_cache(cache, cache_output):
         json.dump(cache, f)
 
 
+def read_config(config_file):
+    config = {}
+    parser = configparser.ConfigParser()
+    parser.read(config_file)
+
+    config['contest'] = dict([(k ,v) for k, v in parser['contest'].items()])
+    return config
+
+
 def main(resfiles, config):
 
     output = config['output']
+
     ranking = get_ranking(resfiles)
     write_results(ranking, output)
+
+    if config['html']:
+        lang = config['contest']['language']
+        output_html = config['html_output']
+        html_template = config['html_template']
+        write_html(ranking, lang, html_template, output_html)
 
     if config['cache']:
         cachefiles = config['cache']
@@ -221,8 +278,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=DESCRIPTION)
     parser.add_argument('resfile1', metavar='FILE1',
                         help='Result file no. 1')
-    parser.add_argument('resfile2', metavar='FILE2',
-                        help='Result file no. 2')
     parser.add_argument('resfile_others', metavar='...', nargs=argparse.REMAINDER,
                         help='Additional result files')
     parser.add_argument('--booklist', nargs='*', metavar='BOOKLIST_FILE',
@@ -233,10 +288,18 @@ if __name__ == '__main__':
                         help='Merge cache files')
     parser.add_argument('--cache-output', default=CACHE_OUTPUT, metavar='CACHE_OUTPUT',
                         help='JSON file to store the merged cache (requires --cache) (default: {})'.format(CACHE_OUTPUT))
+    parser.add_argument('--config', default=CONFIG_FILE, metavar='CONFIG_FILE',
+                        help='INI file to read configs (default: {})'.format(CONFIG_FILE))
     parser.add_argument('-d', action='store_true',
                         help='Enable debug output (implies -v)')
     parser.add_argument('-o', default=OUTPUT_TSV, metavar='OUTPUT_TSV',
                         help='Output file (default: {})'.format(OUTPUT_TSV))
+    parser.add_argument('--html', action='store_true',
+                        help='Produce HTML output')
+    parser.add_argument('--html-output', default=OUTPUT_HTML, metavar='OUTPUT_HTML',
+                        help='Output file for the HTML output (default: {})'.format(OUTPUT_HTML))
+    parser.add_argument('--html-template', default=TEMPLATE_FILE, metavar='TEMPLATE_FILE',
+                        help='Template file for the HTML output (default: {})'.format(TEMPLATE_FILE))
     parser.add_argument('-v', action='store_true',
                         help='Enable verbose output')
 
@@ -245,16 +308,29 @@ if __name__ == '__main__':
     resfiles = list()
 
     resfiles.append(args.resfile1)
-    resfiles.append(args.resfile2)
     if args.resfile_others:
         resfiles = resfiles + args.resfile_others
 
-    config = dict()
+    config_file = args.config
+    config = read_config(config_file)
+
     config['booklist'] = args.booklist
     config['booklist_output'] = args.booklist_output
     config['cache'] = args.cache
     config['cache_output'] = args.cache_output
+
+    # tsv output
     config['output'] = args.o
+
+    # HTML output
+    config['html'] = args.html
+    config['html_template'] = args.html_template
+    if "OUTPUT_TSV" in args.html_output:
+        config['html_output'] = args.html_output.format(
+            OUTPUT_TSV=config['output'])
+    else:
+        config['html_output'] = args.html_output
+
     config['verbose'] = args.v or args.d
     config['debug'] = args.d
 
