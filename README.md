@@ -144,6 +144,11 @@ It requires only libraries that are part of the standard Python 3 library.
 You can install the additional Python module [`yajl`](https://pypi.python.org/pypi/yajl/0.3.5)
 ([GitHub repo](https://github.com/rtyler/py-yajl/)) for faster reading/writing of JSON.
 
+You can install it using `pip` with the following command:
+```bash
+pip install -r requirements.txt
+```
+This has been tested to work also in a virtualenv.
 
 ## Processing books in parallel
 
