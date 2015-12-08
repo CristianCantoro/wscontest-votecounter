@@ -4,25 +4,27 @@ A script to count votes for the Wikisource anniversary contest.
 
 ## Usage
 ```bash
-usage: score.py [-h] [--cache CACHE_FILE] [--config CONFIG_FILE] [-d]
-                [--enable-cache] [-f BOOKS_FILE] [--html]
-                [--html-output OUTPUT_HTML] [--html-template TEMPLATE_FILE]
-                [-o OUTPUT_TSV] [-v]
+usage: score.py [-h] [--booklist-cache BOOKLIST_CACHE] [--cache CACHE_FILE]
+                [--config CONFIG_FILE] [-d] [--enable-cache] [-f BOOKS_FILE]
+                [--html] [--html-output OUTPUT_HTML]
+                [--html-template TEMPLATE_FILE] [-o OUTPUT_TSV] [-v]
 
 Count proofread and validated pages for the Wikisource contest.
 
 optional arguments:
   -h, --help                        show this help message and exit
   --booklist-cache BOOKLIST_CACHE   JSON file to read and store the booklist cache
-  --cache CACHE_FILE                JSON file to read and store the cache (default: books_cache.json)
+                                    (default: {BOOKS_FILE}.booklist_cache.json)
+  --cache CACHE_FILE                JSON file to read and store the cache
+                                    (default: {BOOKS_FILE}.cache.json)
   --config CONFIG_FILE              INI file to read configs (default: contest.conf.ini)
   -d                                Enable debug output (implies -v)
   --enable-cache                    Enable caching
   -f BOOKS_FILE                     TSV file with the books to be processed (default: books.tsv)
   --html                            Produce HTML output
-  --html-output OUTPUT_HTML         Output file for the HTML output (default: index.html)
+  --html-output OUTPUT_HTML         Output file for the HTML output (default: {BOOKS_FILE}.index.html)
   --html-template TEMPLATE_FILE     Template file for the HTML output (default: index.template.html)
-  -o OUTPUT_TSV                     Output file (default: results.tsv)
+  -o OUTPUT_TSV         Output file (default: {BOOKS_FILE}.results.tsv)
   -v                                Enable verbose output
 ```
 
@@ -175,7 +177,7 @@ $ cat books??.tsv | grep -v -e "#" | sort | sed '/^$/d' > separated
 $ diff united separated
 ```
 The first line creates a list of books removing empty lines and lines starting with `#`
-and saves it to a file named `united`. The second line does the same for `books01.tsv`, ...,
+and saves it to a file named `united`. The second line does the same for `books01.tsv`, `...`,
 `books04.tsv` and saves the results in a file named `separated`.
 The third line compares the two results. If you split the books in the new lists correctly,
 you should see no difference.
@@ -183,11 +185,24 @@ you should see no difference.
 You can launch the script on the different input file with the following command
 (analogously for `books02.tsv`, `books03.tsv`, `books04.tsv`):
 ```bash
-python score.py -f books01.tsv -o results01.tsv
+python score.py -f books01.tsv
 ```
 
 For best performance you should split the list in a balanced way with respect to the number
 of pages to process.
+
+You can process list in parallel using a tool like [GNU parallel](https://www.gnu.org/software/parallel/).
+
+For example, to process `books01.tsv`, `...`, `books04.tsv` in parallel:
+```bash
+$ seq -w 01 04 | parallel -t --files --results output_dir python score.py -v -f books{}.tsv -o results{}.tsv
+```
+The results will be saved in files `results01.tsv`, `...`, `results04.tsv`.
+
+You can check the progress of each process with the command:
+```bash
+$ tail -n 3 output_dir/1/*/stderr
+```
 
 ### Merging the results
 

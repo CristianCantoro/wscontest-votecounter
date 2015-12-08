@@ -20,9 +20,9 @@ optional arguments:
   -h, --help            show this help message and exit
   --booklist-cache BOOKLIST_CACHE
                         JSON file to read and store the booklist cache
-                        (default: booklist_cache.json)
+                        (default: {BOOKS_FILE}.booklist_cache.json)
   --cache CACHE_FILE    JSON file to read and store the cache (default:
-                        books_cache.json)
+                        {BOOKS_FILE}.cache.json)
   --config CONFIG_FILE  INI file to read configs (default: contest.conf.ini)
   -d                    Enable debug output (implies -v)
   --enable-cache        Enable caching
@@ -30,11 +30,12 @@ optional arguments:
                         books.tsv)
   --html                Produce HTML output
   --html-output OUTPUT_HTML
-                        Output file for the HTML output (default: index.html)
+                        Output file for the HTML output (default:
+                        {BOOKS_FILE}.index.html)
   --html-template TEMPLATE_FILE
                         Template file for the HTML output (default:
                         index.template.html)
-  -o OUTPUT_TSV         Output file (default: results.tsv)
+  -o OUTPUT_TSV         Output file (default: {BOOKS_FILE}.results.tsv)
   -v                    Enable verbose output
 
 ---
@@ -93,11 +94,11 @@ except ImportError:
 # Files
 BOOKS_FILE = "books.tsv"
 TEMPLATE_FILE = "index.template.html"
-CACHE_FILE = "books_cache.json"
-BOOKLIST_CACHE_FILE = "booklist_cache.json"
+CACHE_FILE = "{BOOKS_FILE}.cache.json"
+BOOKLIST_CACHE_FILE = "{BOOKS_FILE}.booklist_cache.json"
 CONFIG_FILE = "contest.conf.ini"
-OUTPUT_TSV = 'results.tsv'
-OUTPUT_HTML = 'index.html'
+OUTPUT_TSV = '{BOOKS_FILE}.results.tsv'
+OUTPUT_HTML = '{BOOKS_FILE}.index.html'
 
 # URLs
 WIKISOURCE_API = 'https://{lang}.wikisource.org/w/api.php'
@@ -437,14 +438,42 @@ if __name__ == '__main__':
     config_file = args.config
     config = read_config(config_file)
 
+    # OUTPUT_HTML = '{BOOKS_FILE}.index.html'
+
     config['books_file'] = args.f
-    config['booklist_cache'] = args.booklist_cache
-    config['cache_file'] = args.cache
+
+    # Booklist file
+    if "BOOKS_FILE" in args.booklist_cache:
+        config['booklist_cache'] = args.booklist_cache.format(
+            BOOKS_FILE=config['books_file'])
+    else:
+        config['booklist_cache'] = args.booklist_cache
+
+    # Cache file
     config['enable_cache'] = args.enable_cache
+    if "BOOKS_FILE" in args.cache:
+        config['cache_file'] = args.cache.format(
+            BOOKS_FILE=config['books_file'])
+    else:
+        config['cache_file'] = args.cache
+
+    # HTML output
     config['html'] = args.html
     config['html_template'] = args.html_template
-    config['html_output'] = args.html_output
-    config['output'] = args.o
+    if "BOOKS_FILE" in args.html_output:
+        config['html_output'] = args.html_output.format(
+            BOOKS_FILE=config['books_file'])
+    else:
+        config['html_output'] = args.html_output
+
+    # TSV output
+    if "BOOKS_FILE" in args.o:
+        config['output'] = args.o.format(
+            BOOKS_FILE=config['books_file'])
+    else:
+        config['output'] = args.o
+
+    # Verbosity/Debug
     config['verbose'] = args.v or args.d
     config['debug'] = args.d
 
@@ -466,3 +495,5 @@ if __name__ == '__main__':
     logger.debug(config)
 
     main(config)
+
+    logger.info("All done!")
