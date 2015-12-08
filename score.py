@@ -337,7 +337,7 @@ def get_rows(punts, vali, revi):
     # (punts, revi, vali) descending
     return [(user, punts[user], vali[user], revi[user])
             for user in sorted(sorted(punts.keys()),
-                               key=lambda u: (punts[u], revi[u], vali[u])
+                               key=lambda u: (punts[u], revi[u], vali[u]),
                                reverse=True)
             ]
 
