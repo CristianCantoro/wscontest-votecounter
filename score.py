@@ -46,7 +46,7 @@ BOOKS_FILE = "books.tsv"
 TEMPLATE_FILE = "index.template.html"
 CACHE_FILE = "books_cache.json"
 CONFIG_FILE = "contest.conf.ini"
-OUTPUT_CSV = 'results.tsv'
+OUTPUT_TSV = 'results.tsv'
 OUTPUT_HTML = 'index.html'
 
 # URLs
@@ -92,9 +92,9 @@ def read_cache(cache_file):
     return cache
 
 
-def write_cache(cache):
+def write_cache(cache, cache_file):
     logger.debug("Writing cache")
-    with codecs.open(CACHE_FILE, 'w', 'utf-8') as f:
+    with codecs.open(cache_file, 'w', 'utf-8') as f:
         json.dump(cache, f)
 
 
@@ -137,7 +137,7 @@ def get_books(books_file, cache_file):
             end = get_numpages(book)
             cache[booklist][book] = end
 
-            write_cache(cache)
+            write_cache(cache, cache_file)
 
     return [(book, end) for book, end in cache[booklist].items()]
 
@@ -169,7 +169,7 @@ def get_page_revisions(book, page, lang, cache_file):
                                 params) as f:
 
         cache[book][page] = json.loads(f.read().decode('utf-8'))
-        write_cache(cache)
+        write_cache(cache, cache_file)
         return cache[book][page]
 
 
@@ -273,19 +273,19 @@ def get_rows(punts, vali, revi):
             ]
 
 
-def write_html(rows, lang):
+def write_html(rows, lang, output_html):
     with open(config['html_template'], 'r') as f:
         template = f.read()
 
     html_rows = get_html_rows(rows, lang=lang)
     content = template.replace("{{{rows}}}", '\n'.join(html_rows))
-    with codecs.open('index.html', 'w', 'utf-8') as f:
+    with codecs.open(output_html, 'w', 'utf-8') as f:
         f.write(content)
 
 
-def write_csv(rows):
+def write_csv(rows, output):
     csv_fields = ['user', 'punts', 'vali', 'revi']
-    with open(OUTPUT_CSV, 'w', newline='') as csvfile:
+    with open(output, 'w', newline='') as csvfile:
         writer = csv.DictWriter(csvfile,
                                 fieldnames=csv_fields,
                                 delimiter='\t',
@@ -311,25 +311,25 @@ def main(config):
     contest_end = datetime.strptime(config['contest']['end_date'], "%Y-%m-%d %H:%M:%S")
     lang = config['contest']['language']
     cache_file = config['cache_file']
+    output = config['output']
+    output_html = config['html_output']
 
     scores = get_score(books_file, contest_start, contest_end, lang, cache_file)
     rows = get_rows(*scores)
 
-    write_csv(rows)
+    write_csv(rows, output)
 
     if config['html']:
-        write_html(rows, lang)
+        write_html(rows, lang, output_html)
 
 
 if __name__ == '__main__':
 
     DESCRIPTION = 'Count proofread pages for the Wikisource contest.'
     parser = argparse.ArgumentParser(description=DESCRIPTION)
-    parser.add_argument('--cache', default=CACHE_FILE,
-                        metavar='CACHE_FILE',
+    parser.add_argument('--cache', default=CACHE_FILE, metavar='CACHE_FILE',
                         help='JSON file to read and store the cache (default: {})'.format(CACHE_FILE))
-    parser.add_argument('--config', default=CONFIG_FILE,
-                        metavar='CONFIG_FILE',
+    parser.add_argument('--config', default=CONFIG_FILE, metavar='CONFIG_FILE',
                         help='INI file to read configs (default: {})'.format(CONFIG_FILE))
     parser.add_argument('-d', action='store_true',
                         help='Enable debug output (implies -v)')
@@ -337,9 +337,12 @@ if __name__ == '__main__':
                         help='TSV file with the books to be processed (default: {})'.format(BOOKS_FILE))
     parser.add_argument('--html', action='store_true',
                         help='Produce HTML output')
-    parser.add_argument('--html-template', default=TEMPLATE_FILE,
-                        metavar='TEMPLATE_FILE',
+    parser.add_argument('--html-output', default=OUTPUT_HTML, metavar='OUTPUT_HTML',
+                        help='Output file for the HTML output (default: {})'.format(OUTPUT_HTML))
+    parser.add_argument('--html-template', default=TEMPLATE_FILE, metavar='TEMPLATE_FILE',
                         help='Template file for the HTML output (default: {})'.format(TEMPLATE_FILE))
+    parser.add_argument('-o', default=OUTPUT_TSV, metavar='OUTPUT_TSV',
+                        help='Output file (default: {})'.format(OUTPUT_TSV))
     parser.add_argument('-v', action='store_true',
                         help='Enable verbose output')
 
@@ -352,10 +355,12 @@ if __name__ == '__main__':
     config['cache_file'] = args.cache
     config['html'] = args.html
     config['html_template'] = args.html_template
+    config['html_output'] = args.html_output
+    config['output'] = args.o
     config['verbose'] = args.v or args.d
     config['debug'] = args.d
 
-    lvl_config_logger = logging.WARNING    
+    lvl_config_logger = logging.WARNING
     if config['verbose']:
         lvl_config_logger = logging.INFO
 
@@ -371,4 +376,5 @@ if __name__ == '__main__':
     logger.debug("Enable debug")
     logger.debug(args)
     logger.debug(config)
+
     main(config)

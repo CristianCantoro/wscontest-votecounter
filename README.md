@@ -3,21 +3,24 @@
 A script to count votes for the Wikisource anniversary contest.
 
 ## Usage
-```
+```bash
 usage: score.py [-h] [--cache CACHE_FILE] [--config CONFIG_FILE] [-d]
-                [-f BOOKS_FILE] [--html] [--html-template TEMPLATE_FILE] [-v]
+                [-f BOOKS_FILE] [--html] [--html-output OUTPUT_HTML]
+                [--html-template TEMPLATE_FILE] [-o OUTPUT_TSV] [-v]
 
 Count proofread pages for the Wikisource contest.
 
 optional arguments:
-  -h, --help            			show this help message and exit
-  --cache CACHE_FILE    			JSON file to read and store the cache (default: books_cache.json)
-  --config CONFIG_FILE  			INI file to read configs (default: contest.conf.ini)
-  -d                    			Enable debug output (implies -v)
-  -f BOOKS_FILE         			TSV file with the books to be processed (default: books.tsv)
-  --html 				            Produce HTML output
-  --html-template TEMPLATE_FILE		Template file for the HTML output (default: index.template.html)
-  -v                    			Enable verbose output
+  -h, --help                        show this help message and exit
+  --cache CACHE_FILE                JSON file to read and store the cache (default: books_cache.json)
+  --config CONFIG_FILE              INI file to read configs (default: contest.conf.ini)
+  -d                                Enable debug output (implies -v)
+  -f BOOKS_FILE                     TSV file with the books to be processed (default: books.tsv)
+  --html                            Produce HTML output
+  --html-output OUTPUT_HTML         Output file for the HTML output (default: index.html)
+  --html-template TEMPLATE_FILE     Template file for the HTML output (default: index.template.html)
+  -o OUTPUT_TSV                     Output file (default: results.tsv)
+  -v                                Enable verbose output
 ```
 
 ### Input
