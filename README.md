@@ -5,7 +5,7 @@ A script to count votes for the Wikisource anniversary contest.
 ## Usage
 ```bash
 usage: score.py [-h] [--cache CACHE_FILE] [--config CONFIG_FILE] [-d]
-                [--disable-cache] [-f BOOKS_FILE] [--html]
+                [--enable-cache] [-f BOOKS_FILE] [--html]
                 [--html-output OUTPUT_HTML] [--html-template TEMPLATE_FILE]
                 [-o OUTPUT_TSV] [-v]
 
@@ -16,7 +16,7 @@ optional arguments:
   --cache CACHE_FILE                JSON file to read and store the cache (default: books_cache.json)
   --config CONFIG_FILE              INI file to read configs (default: contest.conf.ini)
   -d                                Enable debug output (implies -v)
-  --enable-caching                  Enable caching
+  --enable-cache                    Enable caching
   -f BOOKS_FILE                     TSV file with the books to be processed (default: books.tsv)
   --html                            Produce HTML output
   --html-output OUTPUT_HTML         Output file for the HTML output (default: index.html)
@@ -140,6 +140,10 @@ token to indicate where results will be written.
 
 This script uses Python 3, it has been tested with Python 3.4.3.
 It requires only libraries that are part of the standard Python 3 library.
+
+You can install the additional Python module [`yajl`](https://pypi.python.org/pypi/yajl/0.3.5)
+([GitHub repo](https://github.com/rtyler/py-yajl/)) for faster reading/writing of JSON.
+
 
 ## Processing books in parallel
 

@@ -10,7 +10,7 @@ This script is part of wscontest-votecounter.
 
 ---
 usage: score.py [-h] [--cache CACHE_FILE] [--config CONFIG_FILE] [-d]
-                [--enable-caching] [-f BOOKS_FILE] [--html]
+                [--enable-cache] [-f BOOKS_FILE] [--html]
                 [--html-output OUTPUT_HTML] [--html-template TEMPLATE_FILE]
                 [-o OUTPUT_TSV] [-v]
 
@@ -22,7 +22,7 @@ optional arguments:
                         books_cache.json)
   --config CONFIG_FILE  INI file to read configs (default: contest.conf.ini)
   -d                    Enable debug output (implies -v)
-  --enable-caching      Enable caching
+  --enable-cache        Enable caching
   -f BOOKS_FILE         TSV file with the books to be processed (default:
                         books.tsv)
   --html                Produce HTML output
@@ -66,7 +66,6 @@ THE SOFTWARE.
 """
 import re
 import csv
-import json
 import codecs
 import logging
 import argparse
@@ -79,6 +78,12 @@ from datetime import datetime
 from html import escape
 import urllib.parse
 import urllib.request
+
+# Try to use yajl, a faster module for JSON
+try:
+    import yajl as json
+except ImportError:
+    import json
 
 ### GLOBALS AND DEFAULTS ###
 # Files
@@ -195,9 +200,8 @@ def get_page_revisions(book, page, lang, enable_cache, cache_file):
         return cache[book][page]
 
     # Request is NOT cached
-    if book not in cache:
-        if enable_cache:
-            cache[book] = dict()
+    if enable_cache and book not in cache:
+        cache[book] = dict()
 
     params = {
         'action': 'query',
@@ -398,7 +402,7 @@ if __name__ == '__main__':
                         help='INI file to read configs (default: {})'.format(CONFIG_FILE))
     parser.add_argument('-d', action='store_true',
                         help='Enable debug output (implies -v)')
-    parser.add_argument('--enable-caching', action='store_true',
+    parser.add_argument('--enable-cache', action='store_true',
                         help='Enable caching')
     parser.add_argument('-f', default=BOOKS_FILE, metavar='BOOKS_FILE',
                         help='TSV file with the books to be processed (default: {})'.format(BOOKS_FILE))
