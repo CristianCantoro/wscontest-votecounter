@@ -17,6 +17,10 @@ fi
 NUM_CHUNKS=$REPLY
 echo "Processing books in $NUM_CHUNKS chunks."
 
+rm -r output_dir
+rm -f "books??.tsv*"
+rm -f "results??.tsv*"
+
 echo
 echo -n "Preparing book lists..."
 cat "books.tsv" | grep -v -e "#" | sort | sed '/^$/d' > "united"
@@ -24,7 +28,7 @@ NUM_BOOKS=$(wc -l < "united")
 BOOKS_PER_FILE=$(expr $NUM_BOOKS / $NUM_CHUNKS + 1)
 
 echo " each list will contain $BOOKS_PER_FILE books"
-split -l $BOOKS_PER_FILE --numeric-suffixes=01 --additional-suffix=".tsv" "united" "books."
+split -l $BOOKS_PER_FILE --numeric-suffixes=01 --additional-suffix=".tsv" "united" "books"
 rm united
 NUM_BOOK_LISTS=$(ls -1 books??.tsv | wc -l)
 
@@ -40,7 +44,7 @@ echo "tail -n 3 output_dir/1/*/stderr"
 echo
 echo "***********************************************"
 echo
-seq -w 01 $NUM_BOOK_LISTS | parallel -t --files --results output_dir "$(which python3) score.py -v -f books{}.tsv -o results{}.tsv"
+seq -w 01 $NUM_BOOK_LISTS | parallel -t --files --results output_dir $(which python3) score.py -v -f books{}.tsv -o results{}.tsv
 
 echo
 echo "Books processed... removing temporary files"
