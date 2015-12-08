@@ -5,6 +5,10 @@ score.py
 A script to count proofread and validated pages for the Wikisource anniversary
 contest.
 
+This script is part of wscontest-votecounter.
+(<https://github.com/CristianCantoro/wscontest-votecounter>)
+
+---
 usage: score.py [-h] [--cache CACHE_FILE] [--config CONFIG_FILE] [-d]
                 [--enable-caching] [-f BOOKS_FILE] [--html]
                 [--html-output OUTPUT_HTML] [--html-template TEMPLATE_FILE]
@@ -33,8 +37,14 @@ optional arguments:
 ---
 The MIT License (MIT)
 
+Original script:
 Copyright (c) 2013 Joan Creus <joan.creus.c@gmail.com>
-Copyright (c) 2015 Ricordisamoa and CristianCantoro <kikkocristian@gmail.com>
+
+Modified script:
+Copyright (c) 2015 Ricordisamoa
+
+wscontest-votecounter:
+Copyright (c) 2015 CristianCantoro <kikkocristian@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
