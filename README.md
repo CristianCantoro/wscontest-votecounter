@@ -133,3 +133,75 @@ token to indicate where results will be written.
 
 This script uses Python 3, it has been tested with Python 3.4.3.
 It requires only libraries that are part of the standard Python 3 library.
+
+## Processing books in parallel
+
+You can split up your list of books in several files (say `books01.tsv`, `books02.tsv`,
+`books03.tsv`, `books04.tsv`) and process them in parallel.
+
+A way to split the original list of books is to use the following commands:
+```bash
+$ cat books.tsv | grep -v -e "#" | sort | sed '/^$/d' > united
+$ split -l 11 --numeric-suffixes=01 --additional-suffix=".tsv" united books
+```
+The first line creates a list of books removing empty lines and lines starting with `#`
+and saves it to a file named `united`. The second line split the content of `united`
+in smaller files named `books01.tsv`, `books01.tsv`, etc. with 11 lines per file
+(`-l 11` option).
+
+If you split the files by hand, a way to check if the original list (`books.tsv`) and
+the new lists contain the same books you can do the following:
+
+```bash
+$ cat books.tsv | grep -v -e "#" | sort | sed '/^$/d' > united
+$ cat books??.tsv | grep -v -e "#" | sort | sed '/^$/d' > separated
+$ diff united separated
+```
+The first line creates a list of books removing empty lines and lines starting with `#`
+and saves it to a file named `united`. The second line does the same for `books01.tsv`, ...,
+`books04.tsv` and saves the results in a file named `separated`.
+The third line compares the two results. If you split the books in the new lists correctly,
+you should see no difference.
+
+You can launch the script on the different input file with the following command
+(analogously for `books02.tsv`, `books03.tsv`, `books04.tsv`):
+```bash
+python score.py -f books01.tsv -o results01.tsv --cache books_cache01.json
+```
+
+For best performance you should split the list in a balanced way with respect to the number
+of pages to process.
+
+### Mergin the results
+
+To merge the results you can use the `merge.py` script.
+```
+usage: merge.py [-h] [--cache [CACHE_FILE [CACHE_FILE ...]]]
+                [--cache-output CACHE_OUTPUT] [-d] [-o OUTPUT_TSV] [-v]
+                FILE1 FILE2 ...
+
+Merge results from score.py.
+
+positional arguments:
+  FILE1                 Result file no. 1
+  FILE2                 Result file no. 2
+  ...                   Additional result files
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --cache [CACHE_FILE [CACHE_FILE ...]]
+                        Merge cache files
+  --cache-output CACHE_OUTPUT
+                        JSON file to store the merged cache (requires --cache)
+                        (default: books_cache_tot.tsv)
+  -d                    Enable debug output (implies -v)
+  -o OUTPUT_TSV         Output file (default: results_tot.tsv)
+  -v                    Enable verbose output
+```
+
+Asuming that the results files are named `results01.tsv`, `results02.tsv`, `results03.tsv`
+and `results04.tsv` you can merge them with:
+```bash
+$ python  merge.py results01.tsv results02.tsv results03.tsv results04.tsv
+```
+the results are written to `results_tot.tsv`
