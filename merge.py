@@ -5,6 +5,29 @@ merge.py
 A script to merge results from score.py
 
 ---
+usage: merge.py [-h] [--cache [CACHE_FILE [CACHE_FILE ...]]]
+                [--cache-output CACHE_OUTPUT] [-d] [-o OUTPUT_TSV] [-v]
+                FILE1 FILE2 ...
+
+Merge results from score.py.
+
+positional arguments:
+  FILE1                 Result file no. 1
+  FILE2                 Result file no. 2
+  ...                   Additional result files
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --cache [CACHE_FILE [CACHE_FILE ...]]
+                        Merge cache files
+  --cache-output CACHE_OUTPUT
+                        JSON file to store the merged cache (requires --cache)
+                        (default: books_cache_tot.tsv)
+  -d                    Enable debug output (implies -v)
+  -o OUTPUT_TSV         Output file (default: results_tot.tsv)
+  -v                    Enable verbose output
+
+---
 The MIT License (MIT)
 
 Copyright (c) 2015 CristianCantoro <kikkocristian@gmail.com>
