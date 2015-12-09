@@ -126,7 +126,12 @@ def read_cache(cache_file):
     try:
         with codecs.open(cache_file, 'r', 'utf-8') as f:
             cache = json.load(f)
-    except FileNotFoundError:
+
+    # If the file is not found  Python 3.4 will raise FileNotFoundError which is
+    # a subclass of IOError.
+    # See also:
+    # http://sebastianraschka.com/Articles/python3_OSError.html
+    except IOError:
         cache = dict()
 
     return cache

@@ -53,7 +53,7 @@ rm -f books*_sublist.tsv*
 
 echo
 echo "Merging results..."
-python  merge.py -v  --html --html-output index.html results*_sublist.tsv
+$(which python3)  merge.py -v  --html --html-output index.html results*_sublist.tsv
 
 echo
 echo "Done... removing temporary files"
