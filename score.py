@@ -281,7 +281,11 @@ def get_score(books_file,
             except KeyError:
                 continue
 
-            page_userlist = set()
+            page_userlist = defaultdict(int)
+            for rev in revs:
+                user = rev['user']
+                page_userlist[user]+=1
+
             old = None
             oldUser = None
             oldTimestamp = None
@@ -294,7 +298,7 @@ def get_score(books_file,
                 quality_level = int(quality_level)
                 newUser = user
 
-                if newUser in page_userlist:
+                if page_userlist[newUser]>1:
                     if timestamp >= contest_start and timestamp < contest_end:
                         existing_user = 'C'
                     else:
@@ -304,8 +308,6 @@ def get_score(books_file,
                         existing_user = 'P'
                     else:
                         existing_user = 'N'
-
-                    page_userlist.add(user)
 
                 if timestamp >= contest_start and timestamp < contest_end:
                     logger.debug("Revision(user={user},quality={quality},"
