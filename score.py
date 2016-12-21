@@ -72,6 +72,7 @@ import logging
 import argparse
 import configparser
 from collections import defaultdict
+from collections import namedtuple
 from collections import Counter
 from functools import reduce
 from operator import add
@@ -131,6 +132,14 @@ rootlogger.addHandler(console)
 logger = logging.getLogger('score')
 logger.setLevel(lvl_logger)
 ###
+
+def make_debug_dir():
+    try:
+        os.makedirs('debug')
+    except OSError as exception:
+        import errno
+        if exception.errno != errno.EEXIST:
+            raise
 
 
 def read_cache(cache_file):
@@ -228,6 +237,7 @@ def get_page_revisions(book, page, lang, enable_cache, cache_file):
 
     retries_counter = 0
     retry_fetch = True
+    data = {}
     while retry_fetch and retries_counter < MAX_RETRIES:
         try:
             f = urllib.request.urlopen(WIKISOURCE_API.format(lang=lang), params)
@@ -244,6 +254,32 @@ def get_page_revisions(book, page, lang, enable_cache, cache_file):
         return cache[book][page]
     else:
         return data
+
+
+def write_user_log(**kwargs):
+
+    # Revision(page={page},user={user},"
+    #                              "quality={quality},old_user={old_user},"
+    #                              "old_quality={old_quality},"
+    #                              "timestamp={timestamp})"
+
+    csv_fields = ['user', 'punts', 'vali', 'revi',
+                  'book', 'page',
+                  'quality', 'old_quality',
+                  'other_user', 'timestamp' ]
+
+    user = kwargs['user']
+    filename = '{user}.points.tsv'.format(user=user)
+    output = os.path.join('debug', filename)
+
+    with open(output, 'a+', newline='') as csvfile:
+        writer = csv.DictWriter(csvfile,
+                                fieldnames=csv_fields,
+                                delimiter='\t',
+                                quoting=csv.QUOTE_MINIMAL)
+
+        writer.writerow(kwargs)
+
 
 
 def get_score(books_file,
@@ -264,12 +300,7 @@ def get_score(books_file,
         logger.info("Processing book... \"{}\"".format(book))
 
         if debug:
-            try:
-                os.makedirs('debug')
-            except OSError as exception:
-                import errno
-                if exception.errno != errno.EEXIST:
-                    raise
+            make_debug_dir()
 
             csv_fields = ['user', 'existing_user', 'quality', 'old_user',
                           'old_quality', 'timestamp', 'page']
@@ -358,19 +389,45 @@ def get_score(books_file,
                 # if quality_level == SAL[75] and (old is None or old < SAL[75]):
                 #     proofreaderUser = newUser
 
+                assigned_punts = 0
+                assigned_vali = 0
+                assigned_revi = 0
                 # if old is None: Page doesn't exist before
                 if quality_level == SAL[75] and (old is None or old < SAL[75]) \
                         and timestamp >= contest_start \
                         and timestamp < contest_end:
+
+
                     # User b proofreads the page pag
                     if old == SAL[50]:
                         logger.debug("User: {} - Case 1(a)- Proofread the page, SAL 50% -> SAL 75%".format(newUser))
+
                         punts[newUser] += 3
                         revi[newUser] += 1
+
+                        assigned_punts = 3
+                        assigned_revi = 1
+
                     elif (old is None or old <= SAL[25]):
                         logger.debug("User: {} - Case 1(b)- Proofread the page, SAL 0/25% -> SAL 75%".format(newUser))
                         punts[newUser] += 5
                         revi[newUser] += 1
+
+                        assigned_punts = 5
+                        assigned_revi = 1
+
+                    if debug:
+                        write_user_log(user=newUser,
+                                       punts=assigned_punts,
+                                       vali=assigned_vali,
+                                       revi=assigned_revi,
+                                       book=book,
+                                       page=pag,
+                                       quality=quality_level,
+                                       old_quality=old,
+                                       other_user=oldUser,
+                                       timestamp=timestamp
+                                       )
 
                 if quality_level == SAL[100] and old == SAL[75] \
                         and timestamp >= contest_start \
@@ -386,19 +443,50 @@ def get_score(books_file,
                     punts[newUser] += 1
                     vali[newUser] += 1
 
+                    assigned_punts = 1
+                    assigned_vali = 1
+
+                    if debug:
+                        write_user_log(user=newUser,
+                                       punts=assigned_punts,
+                                       vali=assigned_vali,
+                                       revi=assigned_revi,
+                                       book=book,
+                                       page=pag,
+                                       quality=quality_level,
+                                       old_quality=old,
+                                       other_user=oldUser,
+                                       timestamp=timestamp
+                                       )
+
                 if quality_level == SAL[75] and old == SAL[100] \
                         and timestamp >= contest_start:
                     # SAL100->SAL75, after the contest started
                     if oldTimestamp >= contest_start and oldTimestamp <= contest_end:
                         # the revert happened during the contest
-                        if oldUser != newUser:
-                            # exclude the case where the same user reverts herself
-                            logger.debug("User: {} - Case 3 - Reverted validation".format(newUser))
-                            # we do not need to check if proofreaderUser and Validetor
-                            # are the same (see above)
-                            # proofreaderUser = newUser
-                            punts[oldUser] -= 1
-                            vali[oldUser] -= 1
+                        logger.debug("User: {} - Case 3 - Reverted validation".format(newUser))
+                        # we do not need to check if proofreaderUser and Validetor
+                        # are the same (see above)
+                        # proofreaderUser = newUser
+                        punts[oldUser] -= 1
+                        vali[oldUser] -= 1
+
+                        assigned_punts = -1
+                        assigned_vali = -1
+
+                        if debug:
+                            write_user_log(user=oldUser,
+                                           punts=assigned_punts,
+                                           vali=assigned_vali,
+                                           revi=assigned_revi,
+                                           book=book,
+                                           page=pag,
+                                           quality=quality_level,
+                                           old_quality=old,
+                                           other_user=newUser,
+                                           timestamp=timestamp
+                                           )
+
 
                 if (quality_level < SAL[75] or quality_level is None) and old == SAL[75] \
                         and timestamp >= contest_start:
@@ -414,10 +502,42 @@ def get_score(books_file,
                             logger.debug("User: {} - Case 4(a) - Reverted proofread, SAL 75% -> SAL 50%".format(newUser))
                             punts[oldUser] -= 3
                             revi[oldUser] -= 1
+
+                            assigned_punts = -3
+                            assigned_revi = -1
+
+                            if debug:
+                                write_user_log(user=oldUser,
+                                               punts=assigned_punts,
+                                               vali=assigned_vali,
+                                               revi=assigned_revi,
+                                               book=book,
+                                               page=pag,
+                                               quality=quality_level,
+                                               old_quality=old,
+                                               other_user=newUser,
+                                               timestamp=timestamp
+                                               )
                         else:
                             logger.debug("User: {} - Case 4(a) - Reverted proofread, SAL 75% -> SAL 0/25%".format(newUser))
                             punts[oldUser] -= 5
                             revi[oldUser] -= 1
+
+                            assigned_punts = -5
+                            assigned_revi = -1
+
+                            if debug:
+                                write_user_log(user=oldUser,
+                                               punts=assigned_punts,
+                                               vali=assigned_vali,
+                                               revi=assigned_revi,
+                                               book=book,
+                                               page=pag,
+                                               quality=quality_level,
+                                               old_quality=old,
+                                               other_user=newUser,
+                                               timestamp=timestamp
+                                               )
 
                 if (quality_level < SAL[50] or quality_level is None) and old == SAL[50] \
                         and timestamp >= contest_start:
@@ -430,6 +550,22 @@ def get_score(books_file,
                         logger.debug("User: {} - Case 5 - Reverted SAL 50% -> SAL 0/25%".format(newUser))
                         punts[oldUser] -= 2
                         revi[oldUser] -= 1
+
+                        assigned_punts = -2
+                        assigned_revi = -2
+
+                        if debug:
+                            write_user_log(user=oldUser,
+                                           punts=assigned_punts,
+                                           vali=assigned_vali,
+                                           revi=assigned_revi,
+                                           book=book,
+                                           page=pag,
+                                           quality=quality_level,
+                                           old_quality=old,
+                                           other_user=newUser,
+                                           timestamp=timestamp
+                                           )
 
                 old = quality_level
                 oldUser = newUser
