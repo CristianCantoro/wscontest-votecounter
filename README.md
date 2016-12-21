@@ -143,7 +143,7 @@ If you need to produce a Wikitable from the TSV output, you can use one of this 
 
 ## Installation
 
-This script uses Python 3, it has been tested with Python 3.4.3.
+This script uses Python 3, it has been tested with Python 3.4 and Python 3.5 (up to v. 3.5.2).
 It requires only libraries that are part of the standard Python 3 library.
 
 You can install the additional Python module [`yajl`](https://pypi.python.org/pypi/yajl/0.3.5)
@@ -153,15 +153,14 @@ You can install it using `pip` with the following command:
 ```bash
 pip install -r requirements.txt
 ```
-This has been tested to work also in a virtualenv.
+This has been tested to work in a virtualenv.
 
 ## Processing books in parallel
 
 You can use the script `count_votes.sh` to process books in parallel,
-The script assumes you have [GNU parallel](https://www.gnu.org/software/parallel/) installed
-on your system.
-
-Furthermore, the script assums the existence of the list of books in a file named `books.tsv`.
+The script assumes you have [GNU parallel](https://www.gnu.org/software/parallel/)
+and [docopts](https://github.com/docopt/docopts) - which in turn requires the
+Python module [docopt](https://github.com/docopt/docopts) - installed on your system.
 
 ### count_votes.sh explained
 
