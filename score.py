@@ -378,6 +378,7 @@ def get_score(books_file,
 
                     # we do not need to check if proofreaderUser and Validetor
                     # are the same (see above)
+                    # assert proofreaderUser is not None
                     # if proofreaderUser != newUser:
 
                     # User b validates page pag
@@ -406,8 +407,7 @@ def get_score(books_file,
                         # the revert happened during the contest
 
                         # we do not need to check if proofreaderUser and Validetor
-                        # are the same (see above)
-                        # unset the proofreader user
+                        # are the same (see above). Unset the proofreader user.
                         # proofreaderUser = None
 
                         if quality_level == SAL[50]:
@@ -422,6 +422,11 @@ def get_score(books_file,
                 if (quality_level < SAL[50] or quality_level is None) and old == SAL[50] \
                         and timestamp >= contest_start:
                     if oldTimestamp >= contest_start and oldTimestamp <= contest_end:
+
+                        # we do not need to check if proofreaderUser and Validetor
+                        # are the same (see above)
+                        # assert proofreaderUser is None
+
                         logger.debug("User: {} - Case 5 - Reverted SAL 50% -> SAL 0/25%".format(newUser))
                         punts[oldUser] -= 2
                         revi[oldUser] -= 1
