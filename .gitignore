@@ -4,8 +4,9 @@ index.html
 books_cache*.json
 books*.tsv
 booklist*.json
-output_dir/
 *booklist_cache.json
+output_dir/
+debug/
 
 ### Python ###
 # Byte-compiled / optimized / DLL files

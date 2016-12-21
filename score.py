@@ -9,13 +9,15 @@ This script is part of wscontest-votecounter.
 (<https://github.com/CristianCantoro/wscontest-votecounter>)
 
 ---
-usage: score.py [-h] [--booklist-cache BOOKLIST_CACHE] [--cache CACHE_FILE]
-                [--config CONFIG_FILE] [-d] [--enable-cache] [-f BOOKS_FILE]
-                [-o OUTPUT_TSV] [-v]
+usage:
+    score.py [-dv] [--booklist-cache BOOKLIST_CACHE] [--cache CACHE_FILE]
+             [--config CONFIG_FILE] [--enable-cache] [-f BOOKS_FILE]
+             [-o OUTPUT_TSV]
+    score.py ( -h | --help )
 
 Count proofread and validated pages for the Wikisource contest.
 
-optional arguments:
+Optionals:
   -h, --help            show this help message and exit
   --booklist-cache BOOKLIST_CACHE
                         JSON file to read and store the booklist cache
@@ -23,12 +25,12 @@ optional arguments:
   --cache CACHE_FILE    JSON file to read and store the cache (default:
                         {BOOKS_FILE}.cache.json)
   --config CONFIG_FILE  INI file to read configs (default: contest.conf.ini)
-  -d                    Enable debug output (implies -v)
+  -d --debug            Enable debug output (implies -v)
   --enable-cache        Enable caching
   -f BOOKS_FILE         TSV file with the books to be processed (default:
                         books.tsv)
   -o OUTPUT_TSV         Output file (default: {BOOKS_FILE}.results.tsv)
-  -v                    Enable verbose output
+  -v --verbose          Enable verbose output
 
 ---
 The MIT License (MIT)
@@ -60,6 +62,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
+
+import os
 import re
 import csv
 import codecs
@@ -67,6 +71,7 @@ import logging
 import argparse
 import configparser
 from collections import defaultdict
+from collections import namedtuple
 from collections import Counter
 from functools import reduce
 from operator import add
@@ -231,7 +236,8 @@ def get_score(books_file,
               lang,
               booklist_cache,
               enable_cache,
-              cache_file):
+              cache_file,
+              debug=False):
     # defaults are 0
     books = get_books(books_file, booklist_cache)
     tot_punts = dict()
@@ -240,6 +246,24 @@ def get_score(books_file,
     
     for i, (book, end) in enumerate(books):
         logger.info("Processing book... \"{}\"".format(book))
+
+        if debug:
+            try:
+                os.makedirs('debug')
+            except OSError as exception:
+                import errno
+                if exception.errno != errno.EEXIST:
+                    raise
+
+            csv_fields = ['user', 'existing_user', 'quality', 'old_user',
+                          'old_quality', 'timestamp', 'page']
+            revisions_csv = '{book}.revisions.csv'.format(book=book)
+            revisions_csvfile = open(os.path.join('debug',revisions_csv), 'w')
+            writer = csv.DictWriter(revisions_csvfile,
+                                    fieldnames=csv_fields,
+                                    delimiter='\t',
+                                    quoting=csv.QUOTE_MINIMAL)
+            writer.writeheader()
 
         punts = defaultdict(int)
         vali = defaultdict(int)
@@ -256,9 +280,12 @@ def get_score(books_file,
                 revs = list(query['query']['pages'].values())[0]['revisions'][::-1]
             except KeyError:
                 continue
+
+            page_userlist = set()
             old = None
             oldUser = None
             oldTimestamp = None
+            existing_user = 'N'
             for rev in revs:
                 timestamp = datetime.strptime(rev['timestamp'], '%Y-%m-%dT%H:%M:%SZ')
                 user = rev['user']
@@ -266,6 +293,40 @@ def get_score(books_file,
                 quality_level, newUser = re.findall('<pagequality level="(\d)" user="(.*?)" />', txt)[0]
                 quality_level = int(quality_level)
                 newUser = user
+
+                if newUser in page_userlist:
+                    if timestamp >= contest_start and timestamp < contest_end:
+                        existing_user = 'C'
+                    else:
+                        existing_user = 'D'
+                else:
+                    if timestamp >= contest_start and timestamp < contest_end:
+                        existing_user = 'P'
+                    else:
+                        existing_user = 'N'
+
+                    page_userlist.add(user)
+
+                if timestamp >= contest_start and timestamp < contest_end:
+                    logger.debug("Revision(user={user},quality={quality},"
+                                 "old_user={old_user},old_quality={old_quality},"
+                                 "timestamp={timestamp})"
+                        .format(user=newUser, quality=quality_level,
+                                old_user=oldUser, old_quality=old,
+                                timestamp=timestamp))
+                if debug:
+                    newUser_padded = "{: <25}".format(newUser or '')
+                    oldUser_padded = "{: <25}".format(oldUser or '')
+                    old_quality = 0 if old is None else old
+
+                    writer.writerow({'user': newUser_padded,
+                                     'existing_user': existing_user,
+                                     'quality': quality_level,
+                                     'old_user': oldUser_padded,
+                                     'old_quality': old_quality,
+                                     'timestamp': timestamp,
+                                     'page': pag,
+                                     })
 
                 # if old is None: Page doesn't exist before
                 if quality_level == 3 and (old is None or old < 3) and timestamp >= contest_start and timestamp < contest_end:
@@ -300,6 +361,8 @@ def get_score(books_file,
             logger.debug(vali)
             logger.debug(revi)
 
+        if debug:
+            revisions_csvfile.close()
 
         tot_punts = reduce(add, (Counter(punts), Counter(tot_punts)))
         tot_vali = reduce(add, (Counter(vali), Counter(tot_vali)))
@@ -355,6 +418,7 @@ def main(config):
     cache_file = config['cache_file']
     enable_cache = config['enable_cache']
     output = config['output']
+    debug = config['debug']
 
     scores = get_score(books_file,
                        contest_start,
@@ -362,8 +426,8 @@ def main(config):
                        lang,
                        booklist_cache,
                        enable_cache,
-                       cache_file
-                       )
+                       cache_file,
+                       debug)
 
     rows = get_rows(*scores)
 
@@ -380,7 +444,7 @@ if __name__ == '__main__':
                         help='JSON file to read and store the cache (default: {})'.format(CACHE_FILE))
     parser.add_argument('--config', default=CONFIG_FILE, metavar='CONFIG_FILE',
                         help='INI file to read configs (default: {})'.format(CONFIG_FILE))
-    parser.add_argument('-d', action='store_true',
+    parser.add_argument('-d', '--debug', action='store_true',
                         help='Enable debug output (implies -v)')
     parser.add_argument('--enable-cache', action='store_true',
                         help='Enable caching')
@@ -388,7 +452,7 @@ if __name__ == '__main__':
                         help='TSV file with the books to be processed (default: {})'.format(BOOKS_FILE))
     parser.add_argument('-o', default=OUTPUT_TSV, metavar='OUTPUT_TSV',
                         help='Output file (default: {})'.format(OUTPUT_TSV))
-    parser.add_argument('-v', action='store_true',
+    parser.add_argument('-v', '--verbose', action='store_true',
                         help='Enable verbose output')
 
     args = parser.parse_args()
@@ -421,8 +485,8 @@ if __name__ == '__main__':
         config['output'] = args.o
 
     # Verbosity/Debug
-    config['verbose'] = args.v or args.d
-    config['debug'] = args.d
+    config['verbose'] = args.verbose or args.debug
+    config['debug'] = args.debug
 
     lvl_config_logger = logging.WARNING
     if config['verbose']:
