@@ -66,12 +66,12 @@ THE SOFTWARE.
 import os
 import re
 import csv
+import time
 import codecs
 import logging
 import argparse
 import configparser
 from collections import defaultdict
-from collections import namedtuple
 from collections import Counter
 from functools import reduce
 from operator import add
@@ -97,6 +97,9 @@ OUTPUT_TSV = '{BOOKS_FILE}.results.tsv'
 # URLs
 WIKISOURCE_API = 'https://{lang}.wikisource.org/w/api.php'
 COMMONS_API = 'https://commons.wikimedia.org/w/api.php'
+
+# params
+MAX_RETRIES = 10
 ### ###
 
 ### logging ###
@@ -218,16 +221,25 @@ def get_page_revisions(book, page, lang, enable_cache, cache_file):
     }
     params = urllib.parse.urlencode(params).encode('ascii')
     logger.info("\tRequest page 'Page:{book}/{page}'".format(book=book, page=page))
-    with urllib.request.urlopen(WIKISOURCE_API.format(lang=lang),
-                                params) as f:
 
-        data = json.loads(f.read().decode('utf-8'))
-        if enable_cache:
-            cache[book][page] = data
-            write_cache(cache, cache_file)
-            return cache[book][page]
-        else:
-            return data
+    retries_counter = 0
+    retry_fetch = True
+    while retry_fetch and retries_counter < MAX_RETRIES:
+        try:
+            f = urllib.request.urlopen(WIKISOURCE_API.format(lang=lang), params)
+            data = json.loads(f.read().decode('utf-8'))
+            retry_fetch = False
+        except:
+            time.sleep(0.5)
+            retries_counter += 1
+            retry_fetch = True
+
+    if enable_cache:
+        cache[book][page] = data
+        write_cache(cache, cache_file)
+        return cache[book][page]
+    else:
+        return data
 
 
 def get_score(books_file,
