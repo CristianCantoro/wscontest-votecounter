@@ -100,6 +100,10 @@ COMMONS_API = 'https://commons.wikimedia.org/w/api.php'
 
 # params
 MAX_RETRIES = 10
+
+#SAL:
+SAL = {0: 0, 25: 1, 50: 2, 75: 3, 100: 4}
+
 ### ###
 
 ### logging ###
@@ -302,6 +306,12 @@ def get_score(books_file,
             oldUser = None
             oldTimestamp = None
             existing_user = 'N'
+
+            # we do not need to check if the user that proofreads the page (SAL 75%)
+            # and the user that valides the page are the same.
+            # This is alreaady checked on Wikisource.
+            # proofreaderUser = None
+
             for rev in revs:
                 timestamp = datetime.strptime(rev['timestamp'], '%Y-%m-%dT%H:%M:%SZ')
                 user = rev['user']
@@ -322,10 +332,11 @@ def get_score(books_file,
                         existing_user = 'N'
 
                 if timestamp >= contest_start and timestamp < contest_end:
-                    logger.debug("Revision(user={user},quality={quality},"
-                                 "old_user={old_user},old_quality={old_quality},"
+                    logger.debug("Revision(page={page},user={user},"
+                                 "quality={quality},old_user={old_user},"
+                                 "old_quality={old_quality},"
                                  "timestamp={timestamp})"
-                        .format(user=newUser, quality=quality_level,
+                        .format(page=pag,user=newUser, quality=quality_level,
                                 old_user=oldUser, old_quality=old,
                                 timestamp=timestamp))
                 if debug:
@@ -342,29 +353,77 @@ def get_score(books_file,
                                      'page': pag,
                                      })
 
-                # if old is None: Page doesn't exist before
-                if quality_level == 3 and (old is None or old < 3) and timestamp >= contest_start and timestamp < contest_end:
-                    logger.debug("User: {} - Case 1 - Proofread the page".format(newUser))
-                    # User b proofreads the page pag
-                    punts[newUser] += 3
-                    revi[newUser] += 1
+                # we do not need to check if proofreaderUser and Validetor
+                # are the same (see above)
+                # if quality_level == SAL[75] and (old is None or old < SAL[75]):
+                #     proofreaderUser = newUser
 
-                if quality_level == 4 and old == 3 and timestamp >= contest_start and timestamp < contest_end:
-                    logger.debug("User: {} - Case 2 - Validation".format(newUser))
+                # if old is None: Page doesn't exist before
+                if quality_level == SAL[75] and (old is None or old < SAL[75]) \
+                        and timestamp >= contest_start \
+                        and timestamp < contest_end:
+                    # User b proofreads the page pag
+                    if old == SAL[50]:
+                        logger.debug("User: {} - Case 1(a)- Proofread the page, SAL 50% -> SAL 75%".format(newUser))
+                        punts[newUser] += 3
+                        revi[newUser] += 1
+                    elif (old is None or old <= SAL[25]):
+                        logger.debug("User: {} - Case 1(b)- Proofread the page, SAL 0/25% -> SAL 75%".format(newUser))
+                        punts[newUser] += 5
+                        revi[newUser] += 1
+
+                if quality_level == SAL[100] and old == SAL[75] \
+                        and timestamp >= contest_start \
+                        and timestamp < contest_end:
+
+                    # we do not need to check if proofreaderUser and Validetor
+                    # are the same (see above)
+                    # if proofreaderUser != newUser:
+
                     # User b validates page pag
+                    logger.debug("User: {} - Case 2 - Validation".format(newUser))
                     punts[newUser] += 1
                     vali[newUser] += 1
 
-                if quality_level == 3 and old == 4 and timestamp >= contest_start:
+                if quality_level == SAL[75] and old == SAL[100] \
+                        and timestamp >= contest_start:
+                    # SAL100->SAL75, after the contest started
                     if oldTimestamp >= contest_start and oldTimestamp <= contest_end:
-                        logger.debug("User: {} - Case 3 - Reverted validation".format(newUser))
-                        punts[oldUser] -= 1
-                        vali[oldUser] -= 1
+                        # the revert happened during the contest
+                        if oldUser != newUser:
+                            # exclude the case where the same user reverts herself
+                            logger.debug("User: {} - Case 3 - Reverted validation".format(newUser))
+                            # we do not need to check if proofreaderUser and Validetor
+                            # are the same (see above)
+                            # proofreaderUser = newUser
+                            punts[oldUser] -= 1
+                            vali[oldUser] -= 1
 
-                if quality_level < 3 and old == 3 and timestamp >= contest_start:
+                if (quality_level < SAL[75] or quality_level is None) and old == SAL[75] \
+                        and timestamp >= contest_start:
+                    # SAL75->SAL0/25/50, after the contest started
                     if oldTimestamp >= contest_start and oldTimestamp <= contest_end:
-                        logger.debug("User: {} - Case 4 - Reverted proofread".format(newUser))
-                        punts[oldUser] -= 3
+                        # the revert happened during the contest
+
+                        # we do not need to check if proofreaderUser and Validetor
+                        # are the same (see above)
+                        # unset the proofreader user
+                        # proofreaderUser = None
+
+                        if quality_level == SAL[50]:
+                            logger.debug("User: {} - Case 4(a) - Reverted proofread, SAL 75% -> SAL 50%".format(newUser))
+                            punts[oldUser] -= 3
+                            revi[oldUser] -= 1
+                        else:
+                            logger.debug("User: {} - Case 4(a) - Reverted proofread, SAL 75% -> SAL 0/25%".format(newUser))
+                            punts[oldUser] -= 5
+                            revi[oldUser] -= 1
+
+                if (quality_level < SAL[50] or quality_level is None) and old == SAL[50] \
+                        and timestamp >= contest_start:
+                    if oldTimestamp >= contest_start and oldTimestamp <= contest_end:
+                        logger.debug("User: {} - Case 5 - Reverted SAL 50% -> SAL 0/25%".format(newUser))
+                        punts[oldUser] -= 2
                         revi[oldUser] -= 1
 
                 old = quality_level
