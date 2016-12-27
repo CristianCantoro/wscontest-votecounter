@@ -313,7 +313,7 @@ if __name__ == '__main__':
                         help='JSON file to store the merged cache (requires --cache) (default: {})'.format(CACHE_OUTPUT))
     parser.add_argument('--config', default=CONFIG_FILE, metavar='CONFIG_FILE',
                         help='INI file to read configs (default: {})'.format(CONFIG_FILE))
-    parser.add_argument('-d', action='store_true',
+    parser.add_argument('-d', '--debug', action='store_true',
                         help='Enable debug output (implies -v)')
     parser.add_argument('-o', default=OUTPUT_TSV, metavar='OUTPUT_TSV',
                         help='Output file (default: {})'.format(OUTPUT_TSV))
@@ -323,7 +323,7 @@ if __name__ == '__main__':
                         help='Output file for the HTML output (default: {})'.format(OUTPUT_HTML))
     parser.add_argument('--html-template', default=TEMPLATE_FILE, metavar='TEMPLATE_FILE',
                         help='Template file for the HTML output (default: {})'.format(TEMPLATE_FILE))
-    parser.add_argument('-v', action='store_true',
+    parser.add_argument('-v', '--verbose', action='store_true',
                         help='Enable verbose output')
 
     args = parser.parse_args()
@@ -354,8 +354,8 @@ if __name__ == '__main__':
     else:
         config['html_output'] = args.html_output
 
-    config['verbose'] = args.v or args.d
-    config['debug'] = args.d
+    config['verbose'] = args.verbose or args.debug
+    config['debug'] = args.debug
 
     lvl_config_logger = logging.WARNING
     if config['verbose']:
