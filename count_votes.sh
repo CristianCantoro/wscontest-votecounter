@@ -3,6 +3,7 @@
 debug=false
 verbose=false
 man=false
+keep_files=false
 
 book_file=''
 num_chunks=1
@@ -10,7 +11,7 @@ num_chunks=1
 read -d '' docstring <<EOF
 Usage:
   count_votes.sh [options]
-  count_votes.sh ( -h | --help | --man )
+  count_votes.sh ( -h | --help )
   count_votes.sh ( --version )
 
 
@@ -18,13 +19,14 @@ Usage:
     -b, --book-file BOOK_FILE       Book file [default: books.tsv]
     -n, --num-chunks NUM_CHUNKS     Number of chunks to process [default: 1]
     -d, --debug                     Enable debug mode (implies --verbose)
+    -k, --keep-files                Do not delete temporary files.
     -v, --verbose                   Generate verbose output.
     --man                           Display a man page.
     -h, --help                      Show this help message and exits.
     --version                       Print version and copyright information.
 ----
-unitn_vpn_old.sh 0.1.0
-copyright (c) 2015 Cristian Consonni
+count_votes.sh 0.1.0
+copyright (c) 2016 Cristian Consonni
 MIT License
 This is free software: you are free to change and redistribute it.
 There is NO WARRANTY, to the extent permitted by law.
@@ -119,7 +121,9 @@ split -l $BOOKS_PER_FILE \
     --additional-suffix="_sublist.tsv" \
     'united' books
 
-rm 'united'
+if ! $keep_files; then
+  rm 'united'
+fi
 NUM_BOOK_LISTS=$(find . -name 'books*_sublist.tsv' | wc -l)
 
 echoverbose
@@ -165,18 +169,26 @@ else
 fi
 
 echoverbose
-echoverbose "Books processed... removing temporary files"
-rm -rf output_dir
-rm -f books*_sublist.tsv*
+echoverbose -n "Books processed... "
+if ! $keep_files; then
+  echoverbose "removing temporary files"
+  rm -rf output_dir
+  rm -f books*_sublist.tsv*
+fi
+echoverbose
 
 echoverbose
 echoverbose "Merging results..."
-$(which python3)  merge.py -v  --html --html-output index.html \
+$(which python3)  merge.py "$verbosity" --html --html-output index.html \
     results*_sublist.tsv
 
 echoverbose
-echoverbose "Done... removing temporary files"
-rm -f results*_sublist.tsv*
+echoverbose -n "Done... "
+if ! $keep_files; then
+  echoverbose "removing temporary files"
+  rm -f results*_sublist.tsv*
+fi
+echoverbose
 
 echoverbose
 echoverbose "All done results are in results_tot.tsv"
