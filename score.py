@@ -272,11 +272,19 @@ def write_user_log(**kwargs):
     filename = '{user}.points.tsv'.format(user=user)
     output = os.path.join('debug', filename)
 
+    write_header = False
+    if not os.path.exists(output):
+        write_header = True
+
     with open(output, 'a+', newline='') as csvfile:
         writer = csv.DictWriter(csvfile,
                                 fieldnames=csv_fields,
                                 delimiter='\t',
                                 quoting=csv.QUOTE_MINIMAL)
+
+        if write_header:
+            writer.writeheader()
+            write_header = False
 
         writer.writerow(kwargs)
 
@@ -295,6 +303,9 @@ def get_score(books_file,
     tot_punts = dict()
     tot_vali = dict()
     tot_revi = dict()
+    tot_revi2 = dict()
+    tot_revi3 = dict()
+    tot_revi5 = dict()
     
     for i, (book, end) in enumerate(books):
         logger.info("Processing book... \"{}\"".format(book))
@@ -315,6 +326,9 @@ def get_score(books_file,
         punts = defaultdict(int)
         vali = defaultdict(int)
         revi = defaultdict(int)
+        revi2 = defaultdict(int)
+        revi3 = defaultdict(int)
+        revi5 = defaultdict(int)
 
         logger.info("Querying the API...")
         for pag in range(1, end + 1):
@@ -392,8 +406,23 @@ def get_score(books_file,
                 assigned_punts = 0
                 assigned_vali = 0
                 assigned_revi = 0
+
                 # if old is None: Page doesn't exist before
-                if quality_level == SAL[75] and (old is None or old < SAL[75]) \
+                if quality_level == SAL[50] and (old is None or old < SAL[50]) \
+                        and timestamp >= contest_start \
+                        and timestamp < contest_end:
+
+                        punts[newUser] += 2
+                        revi[newUser] += 1
+                        revi2[newUser] += 1
+
+                        assigned_punts = 2
+                        assigned_revi = 1
+
+                        user = newUser
+                        other_user = oldUser
+
+                elif quality_level == SAL[75] and (old is None or old < SAL[75]) \
                         and timestamp >= contest_start \
                         and timestamp < contest_end:
 
@@ -404,6 +433,7 @@ def get_score(books_file,
 
                         punts[newUser] += 3
                         revi[newUser] += 1
+                        revi3[newUser] += 1
 
                         assigned_punts = 3
                         assigned_revi = 1
@@ -412,24 +442,15 @@ def get_score(books_file,
                         logger.debug("User: {} - Case 1(b)- Proofread the page, SAL 0/25% -> SAL 75%".format(newUser))
                         punts[newUser] += 5
                         revi[newUser] += 1
+                        revi5[newUser] += 1
 
                         assigned_punts = 5
                         assigned_revi = 1
 
-                    if debug:
-                        write_user_log(user=newUser,
-                                       punts=assigned_punts,
-                                       vali=assigned_vali,
-                                       revi=assigned_revi,
-                                       book=book,
-                                       page=pag,
-                                       quality=quality_level,
-                                       old_quality=old,
-                                       other_user=oldUser,
-                                       timestamp=timestamp
-                                       )
+                    user = newUser
+                    other_user = oldUser
 
-                if quality_level == SAL[100] and old == SAL[75] \
+                elif quality_level == SAL[100] and old == SAL[75] \
                         and timestamp >= contest_start \
                         and timestamp < contest_end:
 
@@ -446,20 +467,10 @@ def get_score(books_file,
                     assigned_punts = 1
                     assigned_vali = 1
 
-                    if debug:
-                        write_user_log(user=newUser,
-                                       punts=assigned_punts,
-                                       vali=assigned_vali,
-                                       revi=assigned_revi,
-                                       book=book,
-                                       page=pag,
-                                       quality=quality_level,
-                                       old_quality=old,
-                                       other_user=oldUser,
-                                       timestamp=timestamp
-                                       )
+                    user = newUser
+                    other_user = oldUser
 
-                if quality_level == SAL[75] and old == SAL[100] \
+                elif quality_level == SAL[75] and old == SAL[100] \
                         and timestamp >= contest_start:
                     # SAL100->SAL75, after the contest started
                     if oldTimestamp >= contest_start and oldTimestamp <= contest_end:
@@ -474,21 +485,10 @@ def get_score(books_file,
                         assigned_punts = -1
                         assigned_vali = -1
 
-                        if debug:
-                            write_user_log(user=oldUser,
-                                           punts=assigned_punts,
-                                           vali=assigned_vali,
-                                           revi=assigned_revi,
-                                           book=book,
-                                           page=pag,
-                                           quality=quality_level,
-                                           old_quality=old,
-                                           other_user=newUser,
-                                           timestamp=timestamp
-                                           )
+                        user = oldUser
+                        other_user = newUser
 
-
-                if (quality_level < SAL[75] or quality_level is None) and old == SAL[75] \
+                elif (quality_level < SAL[75] or quality_level is None) and old == SAL[75] \
                         and timestamp >= contest_start:
                     # SAL75->SAL0/25/50, after the contest started
                     if oldTimestamp >= contest_start and oldTimestamp <= contest_end:
@@ -502,44 +502,27 @@ def get_score(books_file,
                             logger.debug("User: {} - Case 4(a) - Reverted proofread, SAL 75% -> SAL 50%".format(newUser))
                             punts[oldUser] -= 3
                             revi[oldUser] -= 1
+                            revi3[newUser] -= 1
 
                             assigned_punts = -3
                             assigned_revi = -1
 
-                            if debug:
-                                write_user_log(user=oldUser,
-                                               punts=assigned_punts,
-                                               vali=assigned_vali,
-                                               revi=assigned_revi,
-                                               book=book,
-                                               page=pag,
-                                               quality=quality_level,
-                                               old_quality=old,
-                                               other_user=newUser,
-                                               timestamp=timestamp
-                                               )
+                            user = oldUser
+                            other_user = newUser
+
                         else:
                             logger.debug("User: {} - Case 4(a) - Reverted proofread, SAL 75% -> SAL 0/25%".format(newUser))
                             punts[oldUser] -= 5
                             revi[oldUser] -= 1
+                            revi5[newUser] -= 1
 
                             assigned_punts = -5
                             assigned_revi = -1
 
-                            if debug:
-                                write_user_log(user=oldUser,
-                                               punts=assigned_punts,
-                                               vali=assigned_vali,
-                                               revi=assigned_revi,
-                                               book=book,
-                                               page=pag,
-                                               quality=quality_level,
-                                               old_quality=old,
-                                               other_user=newUser,
-                                               timestamp=timestamp
-                                               )
+                            user = oldUser
+                            other_user = newUser
 
-                if (quality_level < SAL[50] or quality_level is None) and old == SAL[50] \
+                elif (quality_level < SAL[50] or quality_level is None) and old == SAL[50] \
                         and timestamp >= contest_start:
                     if oldTimestamp >= contest_start and oldTimestamp <= contest_end:
 
@@ -550,22 +533,26 @@ def get_score(books_file,
                         logger.debug("User: {} - Case 5 - Reverted SAL 50% -> SAL 0/25%".format(newUser))
                         punts[oldUser] -= 2
                         revi[oldUser] -= 1
+                        revi2[newUser] -= 1
 
                         assigned_punts = -2
                         assigned_revi = -2
 
-                        if debug:
-                            write_user_log(user=oldUser,
-                                           punts=assigned_punts,
-                                           vali=assigned_vali,
-                                           revi=assigned_revi,
-                                           book=book,
-                                           page=pag,
-                                           quality=quality_level,
-                                           old_quality=old,
-                                           other_user=newUser,
-                                           timestamp=timestamp
-                                           )
+                        user = oldUser
+                        other_user = newUser
+
+                if debug and assigned_punts:
+                    write_user_log(user=user,
+                                   punts=assigned_punts,
+                                   vali=assigned_vali,
+                                   revi=assigned_revi,
+                                   book=book,
+                                   page=pag,
+                                   quality=quality_level,
+                                   old_quality=old,
+                                   other_user=other_user,
+                                   timestamp=timestamp
+                                   )
 
                 old = quality_level
                 oldUser = newUser
@@ -581,28 +568,33 @@ def get_score(books_file,
         tot_punts = reduce(add, (Counter(punts), Counter(tot_punts)))
         tot_vali = reduce(add, (Counter(vali), Counter(tot_vali)))
         tot_revi = reduce(add, (Counter(revi), Counter(tot_revi)))
+        tot_revi2 = reduce(add, (Counter(revi2), Counter(tot_revi2)))
+        tot_revi3 = reduce(add, (Counter(revi3), Counter(tot_revi3)))
+        tot_revi5 = reduce(add, (Counter(revi5), Counter(tot_revi5)))
 
         logger.debug(tot_punts)
         logger.debug(tot_vali)
         logger.debug(tot_revi)
 
-    return tot_punts, tot_vali, tot_revi
+    return tot_punts, tot_vali, tot_revi, tot_revi2, tot_revi3, tot_revi5
 
 
-def get_rows(punts, vali, revi):
+def get_rows(punts, vali, revi, revi2, revi3, revi5):
     # sorting:
     # results are ordered by:
     # (punts desc, revi desc, vali desc, username asc)
     # to obtain this first first sort by username ascending, then by
     # (punts, revi, vali) descending
-    return [(user, punts[user], vali[user], revi[user])
+    return [(user, punts[user], vali[user], revi[user],
+             revi2[user], revi3[user], revi5[user]
+            )
             for user in sorted(sorted(punts.keys()),
                                key=lambda u: (punts[u], revi[u], vali[u]),
                                reverse=True)]
 
 
 def write_csv(rows, output):
-    csv_fields = ['user', 'punts', 'vali', 'revi']
+    csv_fields = ['user', 'punts', 'vali', 'revi', 'revi2', 'revi3', 'revi5']
     with open(output, 'w', newline='') as csvfile:
         writer = csv.DictWriter(csvfile,
                                 fieldnames=csv_fields,
