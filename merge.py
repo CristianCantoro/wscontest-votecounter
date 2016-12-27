@@ -86,7 +86,7 @@ OUTPUT_HTML = '{OUTPUT_TSV}.index.html'
 
 
 # Globals
-CSV_FIELDS = ['user', 'punts', 'vali', 'revi']
+CSV_FIELDS = ['user', 'punts', 'vali', 'revi', 'revi2', 'revi3', 'revi5']
 ### ###
 
 ### logging ###
@@ -136,16 +136,25 @@ def get_ranking(resfiles):
                 punts = int(row['punts'])
                 vali = int(row['vali'])
                 revi = int(row['revi'])
+                revi2 = int(row['revi2'])
+                revi3 = int(row['revi3'])
+                revi5 = int(row['revi5'])
 
                 if user not in ranking:
                     ranking[user] = {'punts': 0,
                                      'vali': 0,
-                                     'revi': 0
+                                     'revi': 0,
+                                     'revi2': 0,
+                                     'revi3': 0,
+                                     'revi5': 0
                                      }
 
                 ranking[user]['punts'] += punts
                 ranking[user]['vali'] += vali
                 ranking[user]['revi'] += revi
+                ranking[user]['revi2'] += revi2
+                ranking[user]['revi3'] += revi3
+                ranking[user]['revi5'] += revi5
 
     return ranking
 
@@ -159,7 +168,10 @@ def get_rows(ranking):
     return [(user,
              ranking[user]['punts'],
              ranking[user]['vali'],
-             ranking[user]['revi']
+             ranking[user]['revi'],
+             ranking[user]['revi2'],
+             ranking[user]['revi3'],
+             ranking[user]['revi5']
              )
             for user in sorted(sorted(ranking.keys()),
                                key=lambda u: (ranking[u]['punts'],
@@ -175,12 +187,23 @@ def format_user(name, lang):
 
 
 def get_html_rows(ranking, lang):
-    table_string = '<tr><td>{user}</td><td>{punts}</td><td>{vali}</td><td>{revi}</td></tr>'
+    table_string = '''
+    <tr>
+    <td>{user}</td>
+    <td>{punts}</td>
+    <td>{vali}</td>
+    <td>{revi}</td><td>{revi2}</td><td>{revi3}</td><td>{revi5}</td>
+    </tr>'''
     return [table_string.format(user=format_user(user, lang),
                                 punts=user_punts,
                                 vali=user_vali,
-                                revi=user_revi)
-            for user, user_punts, user_vali, user_revi
+                                revi=user_revi,
+                                revi2=user_revi2,
+                                revi3=user_revi3,
+                                revi5=user_revi5,
+                                )
+            for user, user_punts, user_vali, user_revi, \
+                user_revi2, user_revi3, user_revi5,
             in get_rows(ranking)]
 
 
