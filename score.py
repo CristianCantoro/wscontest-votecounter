@@ -135,7 +135,8 @@ logger.setLevel(lvl_logger)
 
 def make_debug_dir():
     try:
-        os.makedirs('debug')
+        os.makedirs(os.path.join('debug','revisions'))
+        os.makedirs(os.path.join('debug','points'))
     except OSError as exception:
         import errno
         if exception.errno != errno.EEXIST:
@@ -270,7 +271,7 @@ def write_user_log(**kwargs):
 
     user = kwargs['user']
     filename = '{user}.points.tsv'.format(user=user)
-    output = os.path.join('debug', filename)
+    output = os.path.join('debug', 'points', filename)
 
     write_header = False
     if not os.path.exists(output):
@@ -315,8 +316,10 @@ def get_score(books_file,
 
             csv_fields = ['user', 'existing_user', 'quality', 'old_user',
                           'old_quality', 'timestamp', 'page']
-            revisions_csv = '{book}.revisions.csv'.format(book=book)
-            revisions_csvfile = open(os.path.join('debug',revisions_csv), 'w')
+            revisions_csvfilename = '{book}.revisions.csv'.format(book=book)
+            revisions_csv = os.path.join('debug', 'revisions',
+                                          revisions_csvfilename)
+            revisions_csvfile = open(revisions_csv, 'w')
             writer = csv.DictWriter(revisions_csvfile,
                                     fieldnames=csv_fields,
                                     delimiter='\t',
