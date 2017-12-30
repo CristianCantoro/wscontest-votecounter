@@ -8,7 +8,7 @@ keep_files=false
 book_file=''
 num_chunks=1
 
-read -d '' docstring <<EOF
+read -rd '' docstring <<EOF
 Usage:
   count_votes.sh [options]
   count_votes.sh ( -h | --help )
@@ -66,7 +66,7 @@ bold()          { ansi 1 "$@"; }
 italic()        { ansi 3 "$@"; }
 underline()     { ansi 4 "$@"; }
 strikethrough() { ansi 9 "$@"; }
-ansi()          { echo -e "\e[${1}m${*:2}\e[0m"; }
+ansi()          { echo -e "\\e[${1}m${*:2}\\e[0m"; }
 ####################
 
 
@@ -111,7 +111,7 @@ rm -f results*_sublist.tsv*
 
 echoverbose
 echoverbose -n "Preparing book lists..."
-grep -v -e "#" "books.tsv" | sort | sed '/^$/d' > 'united'
+grep -v -e "#" "${book_file}" | sort | sed '/^$/d' > 'united'
 NUM_BOOKS=$(wc -l < 'united')
 BOOKS_PER_FILE=$((NUM_BOOKS/num_chunks+1))
 
