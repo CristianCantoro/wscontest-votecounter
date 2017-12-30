@@ -3,7 +3,7 @@
 A collection of scripts to count votes for the Wikisource anniversary contest.
 
 ## Usage
-```python
+```bash
 usage: score.py [-h] [--booklist-cache BOOKLIST_CACHE] [--cache CACHE_FILE]
                 [--config CONFIG_FILE] [-d] [--enable-cache] [-f BOOKS_FILE]
                 [-o OUTPUT_TSV] [-v]
@@ -76,7 +76,7 @@ book_regex = \[\[File:(.+?)\.(djvu|pdf)\|?.*?\]\]
 You can use the script `extract_books.py` to get the list of books
 participating in the contest.
 
-```python
+```bash
 Usage:
     extract_books.py [-h] [--config CONFIG_FILE] [-d] [-o BOOKS_FILE] [-v]
 
