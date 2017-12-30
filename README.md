@@ -1,9 +1,9 @@
 # Wikisource Contest vote counter
 
-A script to count votes for the Wikisource anniversary contest.
+A collection of scripts to count votes for the Wikisource anniversary contest.
 
 ## Usage
-```bash
+```python
 usage: score.py [-h] [--booklist-cache BOOKLIST_CACHE] [--cache CACHE_FILE]
                 [--config CONFIG_FILE] [-d] [--enable-cache] [-f BOOKS_FILE]
                 [-o OUTPUT_TSV] [-v]
@@ -47,19 +47,48 @@ Here's a sample:
 
 #### contest.conf.ini
 `contest.conf.ini` is INI-like configuration file.
-It contains the language of the Wikisource, the start and end dates for the contest.
+It contains the following parameters:
+
+* `rules_page`: the page with the list of books participating in the contest, usually this page also hosts the rules
+* `language`: language of the Wikisource
+* `start_date` and `end_date`: respectively the start and end dates for the contest.
+* `book_regex`: a regular expression specifying how to search for the title of books participating in the contest (used by `extract_books.py`)
 
 ```
 # Confiuration file for the wscontest-votecounter script
-# Wikisource anniversary contest of 2015.
-
+# Wikisource anniversary contest of 2017.
 
 [contest]
+rules_page = Wikisource:Quattordicesimo compleanno di Wikisource
 language = it
 
-# Dates are in the format yyyy-mm-dd
-start_date = 2015-11-24
-end_date = 2015-12-08
+# Dates are in the format yyyy-mm-dd HH:MM:SS.
+# Times are in UTC
+start_date = 2017-11-24 00:00:00
+end_date = 2017-12-08 23:59:59
+
+# regex used to search for books participating in the contest
+book_regex = \[\[File:(.+?)\.(djvu|pdf)\|?.*?\]\]
+```
+
+### Extract the book list
+
+You can use the script `extract_books.py` to get the list of books
+participating in the contest.
+
+```python
+Usage:
+    extract_books.py [-h] [--config CONFIG_FILE] [-d] [-o BOOKS_FILE] [-v]
+
+Extract the list of books valid for the Wikisource contest.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --config CONFIG_FILE  INI file to read configs (default: contest.conf.ini)
+  -d, --debug           Enable debug output (implies -v)
+  -o BOOKS_FILE         TSV file with the books to be processed (default:
+                        books.tsv)
+  -v, --verbose         Enable verbose output
 ```
 
 ### Cache

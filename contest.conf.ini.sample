@@ -1,10 +1,14 @@
 # Confiuration file for the wscontest-votecounter script
-# Wikisource anniversary contest of 2015.
+# Wikisource anniversary contest of 2017.
 
 [contest]
+rules_page = Wikisource:Quattordicesimo compleanno di Wikisource
 language = it
 
 # Dates are in the format yyyy-mm-dd HH:MM:SS.
 # Times are in UTC
-start_date = 2015-11-23 00:00:00
-end_date = 2015-12-08 23:59:59
+start_date = 2017-11-24 00:00:00
+end_date = 2017-12-08 23:59:59
+
+# regex used to search for books participating in the contest
+book_regex = \[\[File:(.+?)\.(djvu|pdf)\|?.*?\]\]
