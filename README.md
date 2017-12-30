@@ -271,12 +271,13 @@ positional arguments:
 optional arguments:
   -h, --help                                        show this help message and exit
   --booklist [BOOKLIST_FILE [BOOKLIST_FILE ...]]    Merge booklist cache files
-  --booklist-output BOOKLIST_OUTPUT                 JSON file to store the merged cache (requires --booklist)
-                                                    (default: booklist_cache_tot.tsv)
+  --booklist-output BOOKLIST_OUTPUT                 JSON file to store the merged cache,
+                                                    requires --booklist (default: booklist_cache_tot.tsv)
   --cache [CACHE_FILE [CACHE_FILE ...]]             Merge cache files
-  --cache-output CACHE_OUTPUT                       JSON file to store the merged cache (requires --cache)
-                                                    (default: books_cache_tot.tsv)
-  --config CONFIG_FILE  INI file to read configs    (default: contest.conf.ini)
+  --cache-output CACHE_OUTPUT                       JSON file to store the merged cache,
+                                                    requires --cache (default: books_cache_tot.tsv)
+  --config CONFIG_FILE                              INI file to read configs
+                                                    (default: contest.conf.ini)
   -d                                                Enable debug output (implies -v)
   -o OUTPUT_TSV                                     Output file (default: results_tot.tsv)
   --html                                            Produce HTML output
