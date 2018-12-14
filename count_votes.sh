@@ -68,7 +68,7 @@ if $debug; then
   }
 fi
 
-if $verbose; then
+if $quiet; then
   function echoverbose() { true; }
 fi
 
@@ -125,12 +125,20 @@ rm -f books*_sublist.tsv*
 rm -f results*_sublist.tsv*
 
 echoverbose
-echoverbose -n "Preparing book lists..."
+echoverbose "Preparing book lists..."
 grep -v -e "#" "${book_file}" | sort | sed '/^$/d' > 'united'
 NUM_BOOKS=$(wc -l < 'united')
-BOOKS_PER_FILE=$((NUM_BOOKS/num_chunks+1))
 
-echoverbose " each list will contain $BOOKS_PER_FILE books"
+echodebug "NUM_BOOKS: $NUM_BOOKS"
+echodebug "num_chunks: $num_chunks"
+
+if ((NUM_BOOKS % num_chunks)); then
+  BOOKS_PER_FILE=$((NUM_BOOKS/num_chunks+1))
+else
+  BOOKS_PER_FILE=$((NUM_BOOKS/num_chunks))
+fi
+
+echoverbose "Each list will contain $BOOKS_PER_FILE books"
 split -l "$BOOKS_PER_FILE" \
     --numeric-suffixes=01 \
     --additional-suffix="_sublist.tsv" \
@@ -139,11 +147,11 @@ split -l "$BOOKS_PER_FILE" \
 if $no_keep_files; then
   rm -f 'united'
 fi
-NUM_BOOK_LISTS=$(find . -name 'books*_sublist.tsv' | wc -l)
+NUM_BOOK_LISTS=$(find . -mindepth 1 -maxdepth 1 -name 'books*_sublist.tsv' \
+                 | wc -l)
 
 echoverbose
-echoverbose "There are $NUM_BOOK_LISTS sub-lists with"
-echoverbose "$BOOKS_PER_FILE books per list"
+echoverbose "There are $NUM_BOOK_LISTS sub-lists with $BOOKS_PER_FILE books per list"
 
 echoverbose
 echoverbose "***********************************************"
