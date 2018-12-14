@@ -1,3 +1,4 @@
+# temporary files
 contest.conf.ini
 results*.tsv
 books_dev.tsv
@@ -6,6 +7,9 @@ books_cache*.json
 books*.tsv
 booklist*.json
 *booklist_cache.json
+united
+
+# temporary directories
 output_dir/
 debug/
 
