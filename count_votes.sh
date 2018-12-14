@@ -1,16 +1,18 @@
 #!/usr/bin/env bash
 
 debug=false
-verbose=false
+verbose=true
+quiet=false
 man=false
-keep_files=false
+no_keep_files=false
 
 book_file=''
 num_chunks=1
+num_jobs=1
 
 read -rd '' docstring <<EOF
 Usage:
-  count_votes.sh [options]
+  count_votes.sh [options] [ --debug | --quiet ]
   count_votes.sh ( -h | --help )
   count_votes.sh ( --version )
 
@@ -18,15 +20,16 @@ Usage:
   Options:
     -b, --book-file BOOK_FILE       Book file [default: books.tsv]
     -n, --num-chunks NUM_CHUNKS     Number of chunks to process [default: 1]
-    -d, --debug                     Enable debug mode (implies --verbose)
-    -k, --keep-files                Do not delete temporary files.
-    -v, --verbose                   Generate verbose output.
+    -j, --num-jobs NUM_JOBS         Number of parallel jobs [default: NUM_CHUNKS]
+    -d, --debug                     Enable debug mode (incompatible with --quiet)
+    -K, --no-keep-files             Delete temporary files.
+    -q, --quiet                     Suppress console output.
     --man                           Display a man page.
     -h, --help                      Show this help message and exits.
     --version                       Print version and copyright information.
 ----
-count_votes.sh 0.1.0
-copyright (c) 2016 Cristian Consonni
+count_votes.sh 0.2.0
+copyright (c) 2018 Cristian Consonni
 MIT License
 This is free software: you are free to change and redistribute it.
 There is NO WARRANTY, to the extent permitted by law.
@@ -36,30 +39,37 @@ eval "$(echo "$docstring" | docopts -V - -h - : "$@" )"
 
 # bash strict mode
 # See:
-# http://redsymbol.net/articles/unofficial-bash-strict-mode/
-set -euo pipefail
-IFS=$'\n\t'
+# https://balist.es/blog/2017/03/21/enhancing-the-unofficial-bash-strict-mode/
+# shellcheck disable=SC2128
+SOURCED=false && [ "$0" = "$BASH_SOURCE" ] || SOURCED=true
 
-# --debug implies --verbose
-if $debug; then
-  verbose=true
+if ! $SOURCED; then
+  set -euo pipefail
+  IFS=$'\n\t'
+fi
+
+# --debug is incompatible with --quiet
+# this is already handled by docopts, I leave it here for clarity
+if $debug && $quiet; then
+  (>&2 echo "Options --debug and --quiet are incompatible")
+  exit 1
 fi
 
 #################### Utils
 function echodebug() { true; }
-function echoverbose() { true; }
+function echoverbose() {
+  echo "$@"
+}
 
 if $debug; then
-    function echodebug() {
-        echo -en "[$(date '+%F_%k:%M:%S')][debug]\t"
-        echo "$@" 1>&2;
-    }
+  function echodebug() {
+      echo -en "[$(date '+%F_%k:%M:%S')][debug]\t"
+      echo "$@" 1>&2;
+  }
 fi
 
 if $verbose; then
-    function echoverbose() {
-        echo "$@"
-    }
+  function echoverbose() { true; }
 fi
 
 bold()          { ansi 1 "$@"; }
@@ -94,8 +104,13 @@ if $man; then
   exit 0
 fi
 
+if [ "$num_jobs" == "NUM_CHUNKS" ]; then
+  num_jobs="$num_chunks" 
+fi
+
 echodebug "book_file: $book_file"
 echodebug "num_chunks: $num_chunks"
+echodebug "num_jobs: $num_jobs"
 
 if [ ! -f "$book_file" ]; then
     (>&2 echo "This script assumes that the book list is in a file named: ")
@@ -116,13 +131,13 @@ NUM_BOOKS=$(wc -l < 'united')
 BOOKS_PER_FILE=$((NUM_BOOKS/num_chunks+1))
 
 echoverbose " each list will contain $BOOKS_PER_FILE books"
-split -l $BOOKS_PER_FILE \
+split -l "$BOOKS_PER_FILE" \
     --numeric-suffixes=01 \
     --additional-suffix="_sublist.tsv" \
     'united' books
 
-if ! $keep_files; then
-  rm 'united'
+if $no_keep_files; then
+  rm -f 'united'
 fi
 NUM_BOOK_LISTS=$(find . -name 'books*_sublist.tsv' | wc -l)
 
@@ -155,22 +170,26 @@ fi
 if $verbose; then
     seq -w 01 "$NUM_BOOK_LISTS" | \
         parallel "$print_processes_flag" "$files_flag" \
+            --jobs "$num_jobs" \
             --eta \
             --results output_dir \
-            "$(which python3)" score.py "$verbosity" \
+            "$(command -v python3)" score.py "$verbosity" \
                 -f books{}_sublist.tsv \
                 -o results{}_sublist.tsv
 else
     seq -w 01 "$NUM_BOOK_LISTS" | \
-        parallel --bar --results output_dir \
-            "$(which python3)" score.py \
+        parallel \
+            --jobs "$num_jobs" \
+            --bar \
+            --results output_dir \
+            "$(command -v python3)" score.py \
                 -f books{}_sublist.tsv \
                 -o results{}_sublist.tsv
 fi
 
 echoverbose
 echoverbose -n "Books processed... "
-if ! $keep_files; then
+if $no_keep_files; then
   echoverbose "removing temporary files"
   rm -rf output_dir
   rm -f books*_sublist.tsv*
@@ -179,12 +198,12 @@ echoverbose
 
 echoverbose
 echoverbose "Merging results..."
-$(which python3)  merge.py "$verbosity" --html --html-output index.html \
+$(command -v python3)  merge.py "$verbosity" --html --html-output index.html \
     results*_sublist.tsv
 
 echoverbose
 echoverbose -n "Done... "
-if ! $keep_files; then
+if $no_keep_files; then
   echoverbose "removing temporary files"
   rm -f results*_sublist.tsv*
 fi
