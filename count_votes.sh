@@ -167,33 +167,32 @@ verbosity=''
 print_processes_flag=''
 files_flag=''
 if $verbose; then
-    verbosity='--verbose'
-    print_processes_flag='-t'
-    files_flag='--files'
-    if $debug; then
-        verbosity='--debug'
-    fi
+  verbosity='--verbose'
+  print_processes_flag='-t'
+  files_flag='--files'
+  if $debug; then
+    verbosity='--debug'
+  fi
 fi
 
-if $verbose; then
-    seq -w 01 "$NUM_BOOK_LISTS" | \
-        parallel "$print_processes_flag" "$files_flag" \
-            --jobs "$num_jobs" \
-            --eta \
-            --results output_dir \
-            "$(command -v python3)" score.py "$verbosity" \
-                -f books{}_sublist.tsv \
-                -o results{}_sublist.tsv
-else
-    seq -w 01 "$NUM_BOOK_LISTS" | \
-        parallel \
-            --jobs "$num_jobs" \
-            --bar \
-            --results output_dir \
-            "$(command -v python3)" score.py \
-                -f books{}_sublist.tsv \
-                -o results{}_sublist.tsv
+parallel_verbosity='--eta'
+if ! $verbose; then
+  parallel_verbosity='--bar'
 fi
+
+set +e
+# score.py process can end with:
+#   src/tcmalloc.cc:278] Attempt to free invalid pointer
+# disabling -e while we figure out this problem.
+seq -w 01 "$NUM_BOOK_LISTS" | \
+    parallel "$print_processes_flag" "$files_flag" \
+        --jobs "$num_jobs" \
+        ${parallel_verbosity} \
+        --results output_dir \
+        "$(command -v python3)" score.py "$verbosity" \
+            -f books{}_sublist.tsv \
+            -o results{}_sublist.tsv
+set -e
 
 echoverbose
 echoverbose -n "Books processed... "

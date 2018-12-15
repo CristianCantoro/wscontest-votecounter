@@ -717,3 +717,5 @@ if __name__ == '__main__':
     main(config)
 
     logger.info("All done!")
+
+    exit(0)
