@@ -3,6 +3,9 @@
 
 [contest]
 rules_page = Wikisource:Quattordicesimo compleanno di Wikisource
+
+# for old/multilingua Wikisource (i.e. https://wikisource.org)
+# use 'old' (without quotes) as language
 language = it
 
 # Dates are in the format yyyy-mm-dd HH:MM:SS.

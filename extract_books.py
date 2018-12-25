@@ -71,7 +71,10 @@ CONFIG_FILE = "contest.conf.ini"
 
 # URLs
 WIKISOURCE_API = 'https://{lang}.wikisource.org/w/api.php'
+OLDWIKISOURCE_API = 'https://wikisource.org/w/api.php'
 COMMONS_API = 'https://commons.wikimedia.org/w/api.php'
+
+OLDWIKISOURCE_PREFIXES = set(['old', 'oldwikisource', 'www', ''])
 
 # params
 # numeber of times to retry failing requests
@@ -126,9 +129,15 @@ def get_page_revisions(page, lang):
     retries_counter = 0
     retry_fetch = True
     data = {}
+
+    if lang in OLDWIKISOURCE_PREFIXES:
+        wikisource_api = OLDWIKISOURCE_API
+    else:
+        wikisource_api = WIKISOURCE_API.format(lang=lang)
+
     while retry_fetch and retries_counter < MAX_RETRIES:
         try:
-            f = urllib.request.urlopen(WIKISOURCE_API.format(lang=lang), params)
+            f = urllib.request.urlopen(source_api, params)
             data = json.loads(f.read().decode('utf-8'))
             retry_fetch = False
         except:
