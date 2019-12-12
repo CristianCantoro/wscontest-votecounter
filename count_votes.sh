@@ -7,6 +7,7 @@ man=false
 no_keep_files=false
 
 book_file=''
+config=''
 num_chunks=1
 num_jobs=1
 
@@ -18,18 +19,19 @@ Usage:
 
 
   Options:
-    -b, --book-file BOOK_FILE       Book file [default: books.tsv]
-    -n, --num-chunks NUM_CHUNKS     Number of chunks to process [default: 1]
-    -j, --num-jobs NUM_JOBS         Number of parallel jobs [default: NUM_CHUNKS]
-    -d, --debug                     Enable debug mode (incompatible with --quiet)
+    -b, --book-file BOOK_FILE       Book file [default: books.tsv].
+    -c, --config CONFIG             Config file [default: contest.conf.ini].
+    -n, --num-chunks NUM_CHUNKS     Number of chunks to process [default: 1].
+    -j, --num-jobs NUM_JOBS         Number of parallel jobs [default: NUM_CHUNKS].
+    -d, --debug                     Enable debug mode (incompatible with --quiet).
     -K, --no-keep-files             Delete temporary files.
     -q, --quiet                     Suppress console output.
     --man                           Display a man page.
     -h, --help                      Show this help message and exits.
     --version                       Print version and copyright information.
 ----
-count_votes.sh 0.2.0
-copyright (c) 2018 Cristian Consonni
+count_votes.sh 0.3.0
+copyright (c) 2019 Cristian Consonni
 MIT License
 This is free software: you are free to change and redistribute it.
 There is NO WARRANTY, to the extent permitted by law.
@@ -109,6 +111,7 @@ if [ "$num_jobs" == "NUM_CHUNKS" ]; then
 fi
 
 echodebug "book_file: $book_file"
+echodebug "config_file: $config"
 echodebug "num_chunks: $num_chunks"
 echodebug "num_jobs: $num_jobs"
 
@@ -190,6 +193,7 @@ seq -w 01 "$NUM_BOOK_LISTS" | \
         ${parallel_verbosity} \
         --results output_dir \
         "$(command -v python3)" score.py "$verbosity" \
+            --config "$config" \
             -f books{}_sublist.tsv \
             -o results{}_sublist.tsv
 set -e
