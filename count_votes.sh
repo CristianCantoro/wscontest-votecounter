@@ -209,8 +209,12 @@ echoverbose
 
 echoverbose
 echoverbose "Merging results..."
-$(command -v python3)  merge.py "$verbosity" --html --html-output index.html \
-    results*_sublist.tsv
+$(command -v python3)  merge.py \
+   "$verbosity" \
+   --config "$config" \
+   --html \
+   --html-output index.html \
+     results*_sublist.tsv
 
 echoverbose
 echoverbose -n "Done... "
